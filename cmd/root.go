@@ -20,6 +20,13 @@ var rootCmd = &cobra.Command{
 			log.Fatal("TELEGRAM_BOT_TOKEN environment variable is not set")
 		}
 
+		if _, err := os.Stat(cfg.ModelPath); os.IsNotExist(err) {
+			log.Fatalf("Model file not found at %s", cfg.ModelPath)
+		}
+		if _, err := os.Stat(cfg.MMProjPath); os.IsNotExist(err) {
+			log.Fatalf("Multimodal projector file not found at %s", cfg.MMProjPath)
+		}
+
 		b, err := bot.New(cfg)
 		if err != nil {
 			log.Fatalf("Failed to create bot: %v", err)

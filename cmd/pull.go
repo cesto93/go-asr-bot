@@ -22,22 +22,33 @@ var (
 )
 
 type modelVariant struct {
-	modelFile string
+	modelFile  string
 	mmprojFile string
+	baseURL    string
 }
 
 var modelVariants = map[string]modelVariant{
 	"qwen3-asr-0.6b-q8_0": {
 		modelFile:  "Qwen3-ASR-0.6B-Q8_0.gguf",
 		mmprojFile: "mmproj-Qwen3-ASR-0.6B-Q8_0.gguf",
+		baseURL:    "https://huggingface.co/ggml-org/Qwen3-ASR-0.6B-GGUF/resolve/main",
 	},
 	"qwen3-asr-0.6b-bf16": {
 		modelFile:  "Qwen3-ASR-0.6B-bf16.gguf",
 		mmprojFile: "mmproj-Qwen3-ASR-0.6B-bf16.gguf",
+		baseURL:    "https://huggingface.co/ggml-org/Qwen3-ASR-0.6B-GGUF/resolve/main",
+	},
+	"qwen3-asr-1.7b-q8_0": {
+		modelFile:  "Qwen3-ASR-1.7B-Q8_0.gguf",
+		mmprojFile: "mmproj-Qwen3-ASR-1.7B-Q8_0.gguf",
+		baseURL:    "https://huggingface.co/ggml-org/Qwen3-ASR-1.7B-GGUF/resolve/main",
+	},
+	"qwen3-asr-1.7b-bf16": {
+		modelFile:  "Qwen3-ASR-1.7B-bf16.gguf",
+		mmprojFile: "mmproj-Qwen3-ASR-1.7B-bf16.gguf",
+		baseURL:    "https://huggingface.co/ggml-org/Qwen3-ASR-1.7B-GGUF/resolve/main",
 	},
 }
-
-const modelBaseURL = "https://huggingface.co/ggml-org/Qwen3-ASR-0.6B-GGUF/resolve/main"
 
 var pullCmd = &cobra.Command{
 	Use:   "pull",
@@ -84,7 +95,7 @@ var pullCmd = &cobra.Command{
 func downloadModel(variant, destDir string, upgrade bool) error {
 	v, ok := modelVariants[variant]
 	if !ok {
-		return fmt.Errorf("unknown model variant %q (available: qwen3-asr-0.6b-q8_0, qwen3-asr-0.6b-bf16)", variant)
+		return fmt.Errorf("unknown model variant %q (available: qwen3-asr-0.6b-q8_0, qwen3-asr-0.6b-bf16, qwen3-asr-1.7b-q8_0, qwen3-asr-1.7b-bf16)", variant)
 	}
 
 	if err := os.MkdirAll(destDir, 0755); err != nil {
@@ -95,8 +106,8 @@ func downloadModel(variant, destDir string, upgrade bool) error {
 		name string
 		url  string
 	}{
-		{v.modelFile, modelBaseURL + "/" + v.modelFile},
-		{v.mmprojFile, modelBaseURL + "/" + v.mmprojFile},
+		{v.modelFile, v.baseURL + "/" + v.modelFile},
+		{v.mmprojFile, v.baseURL + "/" + v.mmprojFile},
 	}
 
 	for _, f := range files {
@@ -139,7 +150,7 @@ func init() {
 	pullCmd.Flags().StringVar(&pullProcessor, "processor", "", "processor type: cpu, cuda, vulkan, rocm, metal (auto-detected if empty)")
 	pullCmd.Flags().StringVar(&pullVersion, "version", "latest", "llama.cpp version to download (e.g. b1234)")
 	pullCmd.Flags().BoolVar(&pullUpgrade, "upgrade", false, "force re-download even if already installed")
-	pullCmd.Flags().StringVar(&pullModel, "model", "", "ASR model variant to download (qwen3-asr-0.6b-q8_0, qwen3-asr-0.6b-bf16)")
+	pullCmd.Flags().StringVar(&pullModel, "model", "", "ASR model variant to download (qwen3-asr-0.6b-q8_0, qwen3-asr-0.6b-bf16, qwen3-asr-1.7b-q8_0, qwen3-asr-1.7b-bf16)")
 	pullCmd.Flags().StringVar(&pullModelPath, "model-path", "models", "destination directory for model files")
 	rootCmd.AddCommand(pullCmd)
 }
