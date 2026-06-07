@@ -13,17 +13,16 @@ if [ "$(id -u)" -ne 0 ]; then
 	exit 1
 fi
 
-cd "$(dirname "$0")"
-
-echo "Building ${BIN_NAME}..."
-go build -o "${BIN_NAME}" .
-
 echo "Creating user ${USER_NAME}..."
 id -u "${USER_NAME}" &>/dev/null || useradd -r -s /usr/sbin/nologin -d "${INSTALL_DIR}" "${USER_NAME}"
 
 echo "Installing binary to ${BIN_PATH}..."
-cp "${BIN_NAME}" "${BIN_PATH}"
+SOURCE_USER="${SUDO_USER:-${USER}}"
+SOURCE_HOME=$(getent passwd "${SOURCE_USER}" | cut -d: -f6)
+cp "${SOURCE_HOME}/go/bin/${BIN_NAME}" "${BIN_PATH}"
 chmod 755 "${BIN_PATH}"
+
+mkdir -p "${INSTALL_DIR}"
 
 if [ ! -f "${INSTALL_DIR}/.env" ]; then
 	echo "Creating ${INSTALL_DIR}/.env..."
