@@ -4,6 +4,7 @@ import (
 	"log"
 
 	"github.com/pier/go-asr-bot/config"
+	"github.com/pier/go-asr-bot/internal/asr"
 	"github.com/pier/go-asr-bot/internal/handlers"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
@@ -11,6 +12,7 @@ import (
 type Bot struct {
 	api      *tgbotapi.BotAPI
 	handlers *handlers.Handler
+	asr      *asr.Engine
 }
 
 func New(cfg *config.Config) (*Bot, error) {
@@ -22,9 +24,16 @@ func New(cfg *config.Config) (*Bot, error) {
 	api.Debug = cfg.Debug
 	log.Printf("Authorized on account %s", api.Self.UserName)
 
+	asrEngine := asr.New(cfg.ModelPath, cfg.MMProjPath, cfg.LibPath)
+	if err := asrEngine.Init(); err != nil {
+		return nil, err
+	}
+
+	log.Println("ASR engine initialized")
+
 	return &Bot{
 		api:      api,
-		handlers: handlers.New(api),
+		handlers: handlers.New(api, asrEngine),
 	}, nil
 }
 
