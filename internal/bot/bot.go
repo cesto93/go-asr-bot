@@ -3,9 +3,9 @@ package bot
 import (
 	"log"
 
-	"github.com/pier/go-asr-bot/config"
-	"github.com/pier/go-asr-bot/internal/asr"
-	"github.com/pier/go-asr-bot/internal/handlers"
+	"github.com/cesto93/go-asr-bot/config"
+	"github.com/cesto93/go-asr-bot/internal/asr"
+	"github.com/cesto93/go-asr-bot/internal/handlers"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 

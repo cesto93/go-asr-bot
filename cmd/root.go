@@ -6,8 +6,8 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/pier/go-asr-bot/config"
-	"github.com/pier/go-asr-bot/internal/bot"
+	"github.com/cesto93/go-asr-bot/config"
+	"github.com/cesto93/go-asr-bot/internal/bot"
 	"github.com/spf13/cobra"
 )
 

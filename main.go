@@ -1,6 +1,6 @@
 package main
 
-import "github.com/pier/go-asr-bot/cmd"
+import "github.com/cesto93/go-asr-bot/cmd"
 
 func main() {
 	cmd.Execute()

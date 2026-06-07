@@ -1,7 +1,7 @@
 package handlers
 
 import (
-	"github.com/pier/go-asr-bot/internal/asr"
+	"github.com/cesto93/go-asr-bot/internal/asr"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 

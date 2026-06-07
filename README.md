@@ -13,7 +13,7 @@ Built with `github.com/go-telegram-bot-api/telegram-bot-api/v5`.
 ## Install
 
 ```bash
-go install github.com/pier/go-asr-bot@latest
+go install github.com/cesto93/go-asr-bot@latest
 
 # Pull llama.cpp libraries
 go-asr-bot pull

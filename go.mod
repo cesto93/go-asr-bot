@@ -1,4 +1,4 @@
-module github.com/pier/go-asr-bot
+module github.com/cesto93/go-asr-bot
 
 go 1.26.0
 
