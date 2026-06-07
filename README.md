@@ -10,11 +10,29 @@ Built with `github.com/go-telegram-bot-api/telegram-bot-api/v5`.
 - A Telegram bot token from [@BotFather](https://t.me/BotFather)
 - llama.cpp shared libraries in `llamacpp/` (or configured path)
 
+## Install
+
+```bash
+go install github.com/pier/go-asr-bot@latest
+
+# Pull llama.cpp libraries
+go-asr-bot pull
+
+# Copy and edit the environment file
+cp .env.example .env
+
+# Run
+go-asr-bot
+```
+
 ## Quick start
 
 ```bash
 # Copy and edit the environment file
 cp .env.example .env
+
+# Pull llama.cpp libraries
+go run . pull
 
 # Run
 go run .
@@ -36,7 +54,9 @@ Configuration is loaded via environment variables with optional `.env` file supp
 ## Project structure
 
 ```
-main.go              # entry point, graceful shutdown
+main.go              # entry point
+cmd/root.go          # root command (runs the bot)
+cmd/pull.go          # pull command (downloads llama.cpp)
 config/config.go     # env-based config
 internal/asr/        # ASR engine wrapping yzma/llama.cpp
 internal/bot/bot.go  # bot struct, long-polling updates loop
