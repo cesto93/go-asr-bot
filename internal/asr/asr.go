@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"strings"
 	"sync"
 
 	"github.com/hybridgroup/yzma/pkg/llama"
@@ -163,6 +164,13 @@ func (e *Engine) Transcribe(audioPath string) (string, error) {
 	mem, err := llama.GetMemory(e.lctx)
 	if err == nil && mem != 0 {
 		llama.MemoryClear(mem, true)
+	}
+
+	for _, line := range strings.Split(result, "\n") {
+		if idx := strings.Index(line, "<asr_text>"); idx >= 0 {
+			result = strings.TrimSpace(line[idx+len("<asr_text>"):])
+			break
+		}
 	}
 
 	return result, nil
