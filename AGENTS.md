@@ -16,9 +16,9 @@ TELEGRAM_BOT_TOKEN=your_token go run .
 | ------------------- | ---------------------------- | ------- |
 | `TELEGRAM_BOT_TOKEN` | Bot token from BotFather    | (required) |
 | `DEBUG`             | Enable debug logging         | `false` |
-| `MODEL_PATH`        | Path to Qwen3-ASR GGUF model | `models/Qwen3-ASR-0.6B-Q8_0.gguf` |
-| `MMPROJ_PATH`       | Path to multimodal projector  | `models/mmproj-Qwen3-ASR-0.6B-Q8_0.gguf` |
-| `YZMA_LIB`          | Directory with llama.cpp .so | `llamacpp` |
+| `MODEL_PATH`        | Path to Qwen3-ASR GGUF model | `/opt/go-asr-bot/models/Qwen3-ASR-0.6B-Q8_0.gguf` |
+| `MMPROJ_PATH`       | Path to multimodal projector  | `/opt/go-asr-bot/models/mmproj-Qwen3-ASR-0.6B-Q8_0.gguf` |
+| `YZMA_LIB`          | Directory with llama.cpp .so | `/opt/go-asr-bot/llamacpp` |
 
 ## Project structure
 

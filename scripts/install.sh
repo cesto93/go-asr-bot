@@ -21,22 +21,19 @@ go build -o "${BIN_NAME}" .
 echo "Creating user ${USER_NAME}..."
 id -u "${USER_NAME}" &>/dev/null || useradd -r -s /usr/sbin/nologin -d "${INSTALL_DIR}" "${USER_NAME}"
 
-echo "Creating directory ${INSTALL_DIR}..."
-mkdir -p "${INSTALL_DIR}"/{models,llamacpp}
-
 echo "Installing binary to ${BIN_PATH}..."
 cp "${BIN_NAME}" "${BIN_PATH}"
 chmod 755 "${BIN_PATH}"
 
-echo "Copying models..."
-cp -r models/* "${INSTALL_DIR}/models/"
-
-echo "Copying llama.cpp libraries..."
-cp -r llamacpp/* "${INSTALL_DIR}/llamacpp/"
-
 if [ ! -f "${INSTALL_DIR}/.env" ]; then
-	echo "Copying .env.example to ${INSTALL_DIR}/.env..."
-	cp .env.example "${INSTALL_DIR}/.env"
+	echo "Creating ${INSTALL_DIR}/.env..."
+	cat > "${INSTALL_DIR}/.env" <<EOF
+TELEGRAM_BOT_TOKEN=your_bot_token_here
+DEBUG=false
+MODEL_PATH=${INSTALL_DIR}/models/Qwen3-ASR-0.6B-Q8_0.gguf
+MMPROJ_PATH=${INSTALL_DIR}/models/mmproj-Qwen3-ASR-0.6B-Q8_0.gguf
+YZMA_LIB=${INSTALL_DIR}/llamacpp
+EOF
 	echo ">>> Please edit ${INSTALL_DIR}/.env with your configuration"
 fi
 

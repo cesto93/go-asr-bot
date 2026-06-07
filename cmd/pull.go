@@ -146,11 +146,14 @@ func downloadFile(url, dest string) error {
 }
 
 func init() {
-	pullCmd.Flags().StringVar(&pullLibPath, "lib-path", "llamacpp", "destination directory for llama.cpp libraries")
+	pullLibPath = "/opt/go-asr-bot/llamacpp"
+	pullModelPath = "/opt/go-asr-bot/models"
+
+	pullCmd.Flags().StringVar(&pullLibPath, "lib-path", pullLibPath, "destination directory for llama.cpp libraries")
 	pullCmd.Flags().StringVar(&pullProcessor, "processor", "", "processor type: cpu, cuda, vulkan, rocm, metal (auto-detected if empty)")
 	pullCmd.Flags().StringVar(&pullVersion, "version", "latest", "llama.cpp version to download (e.g. b1234)")
 	pullCmd.Flags().BoolVar(&pullUpgrade, "upgrade", false, "force re-download even if already installed")
 	pullCmd.Flags().StringVar(&pullModel, "model", "", "ASR model variant to download (qwen3-asr-0.6b-q8_0, qwen3-asr-0.6b-bf16, qwen3-asr-1.7b-q8_0, qwen3-asr-1.7b-bf16)")
-	pullCmd.Flags().StringVar(&pullModelPath, "model-path", "models", "destination directory for model files")
+	pullCmd.Flags().StringVar(&pullModelPath, "model-path", pullModelPath, "destination directory for model files")
 	rootCmd.AddCommand(pullCmd)
 }
