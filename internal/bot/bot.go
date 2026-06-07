@@ -10,9 +10,10 @@ import (
 )
 
 type Bot struct {
-	api      *tgbotapi.BotAPI
-	handlers *handlers.Handler
-	asr      *asr.Engine
+	api             *tgbotapi.BotAPI
+	handlers        *handlers.Handler
+	asr             *asr.Engine
+	authorizedUserID int64
 }
 
 func New(cfg *config.Config) (*Bot, error) {
@@ -32,8 +33,9 @@ func New(cfg *config.Config) (*Bot, error) {
 	log.Println("ASR engine initialized")
 
 	return &Bot{
-		api:      api,
-		handlers: handlers.New(api, asrEngine),
+		api:              api,
+		handlers:         handlers.New(api, asrEngine),
+		authorizedUserID: cfg.UserID,
 	}, nil
 }
 
@@ -45,6 +47,9 @@ func (b *Bot) Run() error {
 
 	for update := range updates {
 		if update.Message != nil {
+			if b.authorizedUserID != 0 && update.Message.From.ID != b.authorizedUserID {
+				continue
+			}
 			if err := b.handlers.HandleMessage(update.Message); err != nil {
 				log.Printf("Error handling message: %v", err)
 			}

@@ -2,6 +2,7 @@ package config
 
 import (
 	"os"
+	"strconv"
 
 	"github.com/joho/godotenv"
 )
@@ -12,10 +13,13 @@ type Config struct {
 	ModelPath     string
 	MMProjPath    string
 	LibPath       string
+	UserID        int64
 }
 
 func Load() *Config {
 	godotenv.Load()
+
+	userID, _ := strconv.ParseInt(os.Getenv("USER_ID"), 10, 64)
 
 	return &Config{
 		TelegramToken: os.Getenv("TELEGRAM_BOT_TOKEN"),
@@ -23,6 +27,7 @@ func Load() *Config {
 		ModelPath:     envOrDefault("MODEL_PATH", "models/Qwen3-ASR-0.6B-Q8_0.gguf"),
 		MMProjPath:    envOrDefault("MMPROJ_PATH", "models/mmproj-Qwen3-ASR-0.6B-Q8_0.gguf"),
 		LibPath:       envOrDefault("YZMA_LIB", "llamacpp"),
+		UserID:        userID,
 	}
 }
 
