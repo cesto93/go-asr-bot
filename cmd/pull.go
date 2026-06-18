@@ -2,8 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"io"
-	"net/http"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -47,6 +45,18 @@ var modelVariants = map[string]modelVariant{
 		modelFile:  "Qwen3-ASR-1.7B-bf16.gguf",
 		mmprojFile: "mmproj-Qwen3-ASR-1.7B-bf16.gguf",
 		baseURL:    "https://huggingface.co/ggml-org/Qwen3-ASR-1.7B-GGUF/resolve/main",
+	},
+	"cohere-transcribe-f16": {
+		modelFile:  "cohere-transcribe.gguf",
+		baseURL:    "https://huggingface.co/cstr/cohere-transcribe-03-2026-GGUF/resolve/main",
+	},
+	"cohere-transcribe-q8_0": {
+		modelFile:  "cohere-transcribe-q8_0.gguf",
+		baseURL:    "https://huggingface.co/cstr/cohere-transcribe-03-2026-GGUF/resolve/main",
+	},
+	"cohere-transcribe-q4_k": {
+		modelFile:  "cohere-transcribe-q4_k.gguf",
+		baseURL:    "https://huggingface.co/cstr/cohere-transcribe-03-2026-GGUF/resolve/main",
 	},
 }
 
@@ -95,23 +105,31 @@ var pullCmd = &cobra.Command{
 func downloadModel(variant, destDir string, upgrade bool) error {
 	v, ok := modelVariants[variant]
 	if !ok {
-		return fmt.Errorf("unknown model variant %q (available: qwen3-asr-0.6b-q8_0, qwen3-asr-0.6b-bf16, qwen3-asr-1.7b-q8_0, qwen3-asr-1.7b-bf16)", variant)
+		return fmt.Errorf("unknown model variant %q (available: qwen3-asr-0.6b-q8_0, qwen3-asr-0.6b-bf16, qwen3-asr-1.7b-q8_0, qwen3-asr-1.7b-bf16, cohere-transcribe-f16, cohere-transcribe-q8_0, cohere-transcribe-q4_k)", variant)
 	}
 
-	if err := os.MkdirAll(destDir, 0755); err != nil {
-		return fmt.Errorf("create directory %s: %w", destDir, err)
+	modelDir := filepath.Join(destDir, v.modelFile)
+	if err := os.MkdirAll(modelDir, 0755); err != nil {
+		return fmt.Errorf("create directory %s: %w", modelDir, err)
 	}
 
-	files := []struct {
+	var files []struct {
 		name string
 		url  string
-	}{
-		{v.modelFile, v.baseURL + "/" + v.modelFile},
-		{v.mmprojFile, v.baseURL + "/" + v.mmprojFile},
+	}
+	files = append(files, struct {
+		name string
+		url  string
+	}{v.modelFile, v.baseURL + "/" + v.modelFile})
+	if v.mmprojFile != "" {
+		files = append(files, struct {
+			name string
+			url  string
+		}{v.mmprojFile, v.baseURL + "/" + v.mmprojFile})
 	}
 
 	for _, f := range files {
-		destPath := filepath.Join(destDir, f.name)
+		destPath := filepath.Join(modelDir, f.name)
 		if !upgrade {
 			if _, err := os.Stat(destPath); err == nil {
 				fmt.Println(f.name, "already exists at", destPath)
@@ -129,20 +147,7 @@ func downloadModel(variant, destDir string, upgrade bool) error {
 }
 
 func downloadFile(url, dest string) error {
-	resp, err := http.Get(url)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-
-	out, err := os.Create(dest)
-	if err != nil {
-		return err
-	}
-	defer out.Close()
-
-	_, err = io.Copy(out, resp.Body)
-	return err
+	return download.GetModel(url, dest)
 }
 
 func init() {
@@ -153,7 +158,7 @@ func init() {
 	pullCmd.Flags().StringVar(&pullProcessor, "processor", "", "processor type: cpu, cuda, vulkan, rocm, metal (auto-detected if empty)")
 	pullCmd.Flags().StringVar(&pullVersion, "version", "latest", "llama.cpp version to download (e.g. b1234)")
 	pullCmd.Flags().BoolVar(&pullUpgrade, "upgrade", false, "force re-download even if already installed")
-	pullCmd.Flags().StringVar(&pullModel, "model", "", "ASR model variant to download (qwen3-asr-0.6b-q8_0, qwen3-asr-0.6b-bf16, qwen3-asr-1.7b-q8_0, qwen3-asr-1.7b-bf16)")
+	pullCmd.Flags().StringVar(&pullModel, "model", "", "ASR model variant to download (qwen3-asr-0.6b-q8_0, qwen3-asr-0.6b-bf16, qwen3-asr-1.7b-q8_0, qwen3-asr-1.7b-bf16, cohere-transcribe-f16, cohere-transcribe-q8_0, cohere-transcribe-q4_k)")
 	pullCmd.Flags().StringVar(&pullModelPath, "model-path", pullModelPath, "destination directory for model files")
 	rootCmd.AddCommand(pullCmd)
 }

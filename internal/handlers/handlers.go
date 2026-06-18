@@ -7,10 +7,10 @@ import (
 
 type Handler struct {
 	bot *tgbotapi.BotAPI
-	asr *asr.Engine
+	asr asr.Engine
 }
 
-func New(bot *tgbotapi.BotAPI, asr *asr.Engine) *Handler {
+func New(bot *tgbotapi.BotAPI, asr asr.Engine) *Handler {
 	return &Handler{bot: bot, asr: asr}
 }
 

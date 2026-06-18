@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/cesto93/go-asr-bot/internal/asr"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
@@ -22,7 +23,12 @@ func (h *Handler) handleVoice(msg *tgbotapi.Message) error {
 		return fmt.Errorf("download voice: %w", err)
 	}
 
-	text, err := h.asr.Transcribe(audioPath)
+	pcm, err := asr.AudioToPCM(audioPath, h.asr.SampleRate())
+	if err != nil {
+		return fmt.Errorf("convert audio: %w", err)
+	}
+
+	text, err := h.asr.Transcribe(pcm)
 	if err != nil {
 		return fmt.Errorf("transcribe: %w", err)
 	}

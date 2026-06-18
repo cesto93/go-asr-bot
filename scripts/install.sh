@@ -29,8 +29,8 @@ if [ ! -f "${INSTALL_DIR}/.env" ]; then
 	cat > "${INSTALL_DIR}/.env" <<EOF
 TELEGRAM_BOT_TOKEN=your_bot_token_here
 DEBUG=false
-MODEL_PATH=${INSTALL_DIR}/models/Qwen3-ASR-0.6B-Q8_0.gguf
-MMPROJ_PATH=${INSTALL_DIR}/models/mmproj-Qwen3-ASR-0.6B-Q8_0.gguf
+MODEL_PATH=${INSTALL_DIR}/models/Qwen3-ASR-0.6B-Q8_0.gguf/Qwen3-ASR-0.6B-Q8_0.gguf
+MMPROJ_PATH=${INSTALL_DIR}/models/Qwen3-ASR-0.6B-Q8_0.gguf/mmproj-Qwen3-ASR-0.6B-Q8_0.gguf
 YZMA_LIB=${INSTALL_DIR}/llamacpp
 EOF
 	echo ">>> Please edit ${INSTALL_DIR}/.env with your configuration"

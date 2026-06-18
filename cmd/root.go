@@ -4,6 +4,7 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"syscall"
 
 	"github.com/cesto93/go-asr-bot/config"
@@ -11,20 +12,59 @@ import (
 	"github.com/spf13/cobra"
 )
 
+const modelsDir = "/opt/go-asr-bot/models"
+
+var (
+	flagModel   string
+	flagBackend string
+)
+
+func init() {
+	rootCmd.Flags().StringVar(&flagModel, "model", "", "ASR model name (one of: qwen3-asr-0.6b-q8_0, qwen3-asr-0.6b-bf16, qwen3-asr-1.7b-q8_0, qwen3-asr-1.7b-bf16, cohere-transcribe-f16, cohere-transcribe-q8_0, cohere-transcribe-q4_k)")
+	rootCmd.Flags().StringVar(&flagBackend, "backend", "", "ASR backend: yzma or crispasr (overrides ASR_BACKEND)")
+}
+
 var rootCmd = &cobra.Command{
 	Use:   "go-asr-bot",
 	Short: "Telegram bot for ASR transcription",
 	Run: func(cmd *cobra.Command, args []string) {
 		cfg := config.Load()
+
+		if flagBackend != "" {
+			cfg.ASRBackend = flagBackend
+		}
+
+		if flagModel != "" {
+			v, ok := modelVariants[flagModel]
+			if !ok {
+				log.Fatalf("unknown model %q (available: qwen3-asr-0.6b-q8_0, qwen3-asr-0.6b-bf16, qwen3-asr-1.7b-q8_0, qwen3-asr-1.7b-bf16, cohere-transcribe-f16, cohere-transcribe-q8_0, cohere-transcribe-q4_k)", flagModel)
+			}
+
+			modelFile := filepath.Join(modelsDir, v.modelFile, v.modelFile)
+			switch cfg.ASRBackend {
+			case "yzma":
+				cfg.ModelPath = modelFile
+				cfg.MMProjPath = filepath.Join(modelsDir, v.modelFile, v.mmprojFile)
+			case "crispasr":
+				cfg.CrispasrModelPath = modelFile
+			}
+		}
 		if cfg.TelegramToken == "" {
 			log.Fatal("TELEGRAM_BOT_TOKEN environment variable is not set")
 		}
 
-		if _, err := os.Stat(cfg.ModelPath); os.IsNotExist(err) {
-			log.Fatalf("Model file not found at %s", cfg.ModelPath)
+		if cfg.ASRBackend == "yzma" {
+			if _, err := os.Stat(cfg.ModelPath); os.IsNotExist(err) {
+				log.Fatalf("Model file not found at %s", cfg.ModelPath)
+			}
+			if _, err := os.Stat(cfg.MMProjPath); os.IsNotExist(err) {
+				log.Fatalf("Multimodal projector file not found at %s", cfg.MMProjPath)
+			}
 		}
-		if _, err := os.Stat(cfg.MMProjPath); os.IsNotExist(err) {
-			log.Fatalf("Multimodal projector file not found at %s", cfg.MMProjPath)
+		if cfg.ASRBackend == "crispasr" {
+			if _, err := os.Stat(cfg.CrispasrModelPath); os.IsNotExist(err) {
+				log.Fatalf("CrispASR model file not found at %s", cfg.CrispasrModelPath)
+			}
 		}
 
 		b, err := bot.New(cfg)

@@ -2,32 +2,95 @@
 
 Go-based Telegram bot using `github.com/go-telegram-bot-api/telegram-bot-api/v5`.
 
-ASR transcription using `github.com/hybridgroup/yzma` with llama.cpp and Qwen3-ASR models.
+ASR transcription via two backends:
+- **yzma** (default): `github.com/hybridgroup/yzma` with llama.cpp and Qwen3-ASR
+- **crispasr**: CrispASR C library wrapping 26+ ASR backends (parakeet, canary, whisper, cohere-transcribe, etc.)
 
 ## Run
 
 ```bash
+# yzma (default)
 TELEGRAM_BOT_TOKEN=your_token go run .
+
+# CrispASR (requires building libcrispasr.so in lib/crispasr/)
+CGO_ENABLED=1 ASR_BACKEND=crispasr go run .
 ```
 
 ## Configuration
 
-| Variable            | Description                  | Default |
-| ------------------- | ---------------------------- | ------- |
-| `TELEGRAM_BOT_TOKEN` | Bot token from BotFather    | (required) |
-| `DEBUG`             | Enable debug logging         | `false` |
-| `MODEL_PATH`        | Path to Qwen3-ASR GGUF model | `/opt/go-asr-bot/models/Qwen3-ASR-0.6B-Q8_0.gguf` |
-| `MMPROJ_PATH`       | Path to multimodal projector  | `/opt/go-asr-bot/models/mmproj-Qwen3-ASR-0.6B-Q8_0.gguf` |
-| `YZMA_LIB`          | Directory with llama.cpp .so | `/opt/go-asr-bot/llamacpp` |
+| Variable             | Description                   | Default |
+| -------------------- | ----------------------------- | ------- |
+| `TELEGRAM_BOT_TOKEN` | Bot token from BotFather     | (required) |
+| `DEBUG`              | Enable debug logging          | `false` |
+| `USER_ID`            | Restrict to single user       | `0` (all) |
+| `ASR_BACKEND`        | Backend: `yzma` or `crispasr` | `yzma` |
+
+### yzma backend
+
+| Variable       | Description                   | Default |
+| -------------- | ----------------------------- | ------- |
+| `MODEL_PATH`   | Path to Qwen3-ASR GGUF model  | `/opt/go-asr-bot/models/Qwen3-ASR-0.6B-Q8_0.gguf/Qwen3-ASR-0.6B-Q8_0.gguf` |
+| `MMPROJ_PATH`  | Path to multimodal projector   | `/opt/go-asr-bot/models/Qwen3-ASR-0.6B-Q8_0.gguf/mmproj-Qwen3-ASR-0.6B-Q8_0.gguf` |
+| `YZMA_LIB`     | Directory with llama.cpp .so  | `/opt/go-asr-bot/llamacpp` |
+
+### CrispASR backend
+
+| Variable              | Description                  | Default |
+| --------------------- | ---------------------------- | ------- |
+| `CRISPASR_MODEL_PATH` | Path to any CrispASR GGUF    | `/opt/go-asr-bot/models/parakeet-tdt-0.6b-v3.gguf/parakeet-tdt-0.6b-v3.gguf` |
+| `CRISPASR_THREADS`    | CPU threads                  | `4` |
+
+## Pull models
+
+```bash
+# yzma models (Qwen3-ASR)
+go run . pull --model qwen3-asr-0.6b-q8_0
+go run . pull --model qwen3-asr-1.7b-q8_0
+
+# CrispASR models (use with ASR_BACKEND=crispasr)
+go run . pull --model cohere-transcribe-q8_0
+go run . pull --model cohere-transcribe-q4_k
+go run . pull --model cohere-transcribe-f16
+
+# llama.cpp libraries (for yzma backend)
+go run . pull
+```
+
+## Build CrispASR C library
+
+```bash
+git submodule add https://github.com/CrispStrobe/CrispASR lib/crispasr
+cmake -S lib/crispasr -B lib/crispasr/build -DBUILD_SHARED_LIBS=ON -DCMAKE_BUILD_TYPE=Release
+cmake --build lib/crispasr/build --target crispasr -j$(nproc)
+```
+
+Then build the bot with `CGO_ENABLED=1`.
 
 ## Project structure
 
 ```
 main.go              # entry point, graceful shutdown
+cmd/                 # cobra commands (root, pull, list)
 config/config.go     # env-based config
-internal/asr/        # ASR engine wrapping yzma/llama.cpp
+internal/asr/        # Engine interface + backends (yzma, crispasr)
 internal/bot/bot.go  # bot struct, long-polling updates loop
 internal/handlers/   # message & command handlers
+lib/crispasr/        # CrispASR git submodule
+```
+
+## Models directory
+
+Each model variant lives in its own subdirectory named after the model `.gguf` file:
+
+```
+/opt/go-asr-bot/models/
+├── Qwen3-ASR-0.6B-Q8_0.gguf/
+│   ├── Qwen3-ASR-0.6B-Q8_0.gguf
+│   └── mmproj-Qwen3-ASR-0.6B-Q8_0.gguf
+├── cohere-transcribe-q8_0.gguf/
+│   └── cohere-transcribe-q8_0.gguf
+└── cohere-transcribe-q4_k.gguf/
+    └── cohere-transcribe-q4_k.gguf
 ```
 
 ## Conventions

@@ -10,9 +10,9 @@ import (
 )
 
 type Bot struct {
-	api             *tgbotapi.BotAPI
-	handlers        *handlers.Handler
-	asr             *asr.Engine
+	api              *tgbotapi.BotAPI
+	handlers         *handlers.Handler
+	asr              asr.Engine
 	authorizedUserID int64
 }
 
@@ -25,12 +25,12 @@ func New(cfg *config.Config) (*Bot, error) {
 	api.Debug = cfg.Debug
 	log.Printf("Authorized on account %s", api.Self.UserName)
 
-	asrEngine := asr.New(cfg.ModelPath, cfg.MMProjPath, cfg.LibPath)
-	if err := asrEngine.Init(); err != nil {
+	asrEngine, err := asr.NewFromConfig(cfg)
+	if err != nil {
 		return nil, err
 	}
 
-	log.Println("ASR engine initialized")
+	log.Printf("ASR engine initialized (backend: %s)", cfg.ASRBackend)
 
 	return &Bot{
 		api:              api,
