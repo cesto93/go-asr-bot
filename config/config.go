@@ -12,10 +12,7 @@ type Config struct {
 	Debug         bool
 	UserID        int64
 
-	// Backend selection
-	ASRBackend string // "yzma" (default) or "crispasr"
-
-	// yzma/Qwen3-ASR backend (used when ASRBackend == "yzma")
+	// yzma/Qwen3-ASR backend
 	ModelPath  string
 	MMProjPath string
 	YzmaLib    string
@@ -23,7 +20,7 @@ type Config struct {
 	// Language hint for transcription (ISO 639-1, e.g. "en", "fr", "de")
 	Language string
 
-	// CrispASR backend (used when ASRBackend == "crispasr")
+	// CrispASR backend
 	CrispasrModelPath string
 	CrispasrThreads   int
 }
@@ -38,8 +35,7 @@ func Load() *Config {
 		Debug:         os.Getenv("DEBUG") == "true",
 		UserID:        userID,
 
-		ASRBackend: "yzma",
-		Language:   os.Getenv("ASR_LANGUAGE"),
+		Language: os.Getenv("ASR_LANGUAGE"),
 
 		ModelPath:  envOrDefault("MODEL_PATH", "/opt/go-asr-bot/models/Qwen3-ASR-0.6B-Q8_0.gguf/Qwen3-ASR-0.6B-Q8_0.gguf"),
 		MMProjPath: envOrDefault("MMPROJ_PATH", "/opt/go-asr-bot/models/Qwen3-ASR-0.6B-Q8_0.gguf/mmproj-Qwen3-ASR-0.6B-Q8_0.gguf"),

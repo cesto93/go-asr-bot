@@ -39,9 +39,7 @@ var rootCmd = &cobra.Command{
 				log.Fatalf("unknown model %q (available: qwen3-asr-0.6b-q8_0, qwen3-asr-0.6b-bf16, qwen3-asr-1.7b-q8_0, qwen3-asr-1.7b-bf16, cohere-transcribe-f16, cohere-transcribe-q8_0, cohere-transcribe-q4_k, parakeet-tdt-0.6b-v3, parakeet-tdt-0.6b-v3-q8_0, parakeet-tdt-0.6b-v3-q5_0, parakeet-tdt-0.6b-v3-q4_k)", flagModel)
 			}
 
-			cfg.ASRBackend = v.backend
-
-			switch cfg.ASRBackend {
+			switch v.backend {
 			case "yzma":
 				cfg.ModelPath = resolveModelPath(v, v.modelFile)
 				if v.mmprojFile != "" {
@@ -55,7 +53,11 @@ var rootCmd = &cobra.Command{
 			log.Fatal("TELEGRAM_BOT_TOKEN environment variable is not set")
 		}
 
-		if cfg.ASRBackend == "yzma" {
+		backend := "yzma"
+		if flagModel != "" {
+			backend = modelVariants[flagModel].backend
+		}
+		if backend == "yzma" {
 			if _, err := os.Stat(cfg.ModelPath); os.IsNotExist(err) {
 				log.Fatalf("Model file not found at %s", cfg.ModelPath)
 			}
@@ -63,7 +65,7 @@ var rootCmd = &cobra.Command{
 				log.Fatalf("Multimodal projector file not found at %s", cfg.MMProjPath)
 			}
 		}
-		if cfg.ASRBackend == "crispasr" {
+		if backend == "crispasr" {
 			if _, err := os.Stat(cfg.CrispasrModelPath); os.IsNotExist(err) {
 				log.Fatalf("CrispASR model file not found at %s", cfg.CrispasrModelPath)
 			}

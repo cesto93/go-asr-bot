@@ -42,9 +42,7 @@ var runCmd = &cobra.Command{
 				os.Exit(1)
 			}
 
-			cfg.ASRBackend = v.backend
-
-			switch cfg.ASRBackend {
+			switch v.backend {
 			case "yzma":
 				cfg.ModelPath = resolveModelPath(v, v.modelFile)
 				if v.mmprojFile != "" {
@@ -55,7 +53,11 @@ var runCmd = &cobra.Command{
 			}
 		}
 
-		if cfg.ASRBackend == "yzma" {
+		backend := "yzma"
+		if runModel != "" {
+			backend = modelVariants[runModel].backend
+		}
+		if backend == "yzma" {
 			if _, err := os.Stat(cfg.ModelPath); os.IsNotExist(err) {
 				fmt.Fprintf(os.Stderr, "Model file not found at %s\n", cfg.ModelPath)
 				os.Exit(1)
@@ -65,7 +67,7 @@ var runCmd = &cobra.Command{
 				os.Exit(1)
 			}
 		}
-		if cfg.ASRBackend == "crispasr" {
+		if backend == "crispasr" {
 			if _, err := os.Stat(cfg.CrispasrModelPath); os.IsNotExist(err) {
 				fmt.Fprintf(os.Stderr, "CrispASR model file not found at %s\n", cfg.CrispasrModelPath)
 				os.Exit(1)

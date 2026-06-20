@@ -30,8 +30,6 @@ func New(cfg *config.Config) (*Bot, error) {
 		return nil, err
 	}
 
-	log.Printf("ASR engine initialized (backend: %s)", cfg.ASRBackend)
-
 	return &Bot{
 		api:              api,
 		handlers:         handlers.New(api, asrEngine),
