@@ -158,11 +158,3 @@ internal/handlers/   # message & command handlers
 lib/crispasr/        # CrispASR git submodule
 ```
 
-## Conventions
-
-- **No comments** in code unless necessary for non-obvious logic
-- **No emojis** in code or commit messages
-- Imports grouped: stdlib first, then third-party, then internal
-- Error handling: return errors up, log at call site
-- Handlers go in `internal/handlers/`, one file per concern if they grow
-- Bot lifecycle managed in `internal/bot/bot.go`
