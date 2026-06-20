@@ -13,10 +13,14 @@ import (
 
 const modelsDir = "/opt/go-asr-bot/models"
 
-var flagModel string
+var (
+	flagModel string
+	flagLang  string
+)
 
 func init() {
 	rootCmd.Flags().StringVar(&flagModel, "model", "", "ASR model name (one of: qwen3-asr-0.6b-q8_0, qwen3-asr-0.6b-bf16, qwen3-asr-1.7b-q8_0, qwen3-asr-1.7b-bf16, cohere-transcribe-f16, cohere-transcribe-q8_0, cohere-transcribe-q4_k)")
+	rootCmd.Flags().StringVar(&flagLang, "lang", "", "Source language (ISO 639-1, e.g. en, fr, de)")
 }
 
 var rootCmd = &cobra.Command{
@@ -24,6 +28,10 @@ var rootCmd = &cobra.Command{
 	Short: "Telegram bot for ASR transcription",
 	Run: func(cmd *cobra.Command, args []string) {
 		cfg := config.Load()
+
+		if flagLang != "" {
+			cfg.Language = flagLang
+		}
 
 		if flagModel != "" {
 			v, ok := modelVariants[flagModel]

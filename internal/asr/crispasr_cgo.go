@@ -23,6 +23,8 @@ void         crispasr_session_result_free(crispasr_session_result* r);
 
 int crispasr_session_set_max_new_tokens(CrispasrSession* s, int max_new_tokens);
 int crispasr_session_set_temperature(CrispasrSession* s, float temperature, unsigned long long seed);
+int crispasr_session_set_source_language(CrispasrSession* s, const char* lang);
+crispasr_session_result* crispasr_session_transcribe_lang(CrispasrSession* s, const float* pcm, int n_samples, const char* language);
 */
 import "C"
 
@@ -33,10 +35,11 @@ import (
 )
 
 type crispasrEngine struct {
-	session *C.CrispasrSession
+	session  *C.CrispasrSession
+	language string
 }
 
-func newCrispasr(modelPath string, threads int) (*crispasrEngine, error) {
+func newCrispasr(modelPath string, threads int, lang string) (*crispasrEngine, error) {
 	cpath := C.CString(modelPath)
 	defer C.free(unsafe.Pointer(cpath))
 
@@ -45,10 +48,16 @@ func newCrispasr(modelPath string, threads int) (*crispasrEngine, error) {
 		return nil, fmt.Errorf("crispasr_session_open: failed to open %s", modelPath)
 	}
 
-	engine := &crispasrEngine{session: h}
+	engine := &crispasrEngine{session: h, language: lang}
 
 	C.crispasr_session_set_max_new_tokens(h, C.int(256))
 	C.crispasr_session_set_temperature(h, C.float(0), C.ulonglong(0))
+
+	if lang != "" {
+		clang := C.CString(lang)
+		C.crispasr_session_set_source_language(h, clang)
+		C.free(unsafe.Pointer(clang))
+	}
 
 	return engine, nil
 }
@@ -72,6 +81,10 @@ func (e *crispasrEngine) SampleRate() int {
 }
 
 func (e *crispasrEngine) Transcribe(pcm []float32) (string, error) {
+	return e.TranscribeLang(pcm, e.language)
+}
+
+func (e *crispasrEngine) TranscribeLang(pcm []float32, lang string) (string, error) {
 	if e.session == nil {
 		return "", fmt.Errorf("engine not initialized")
 	}
@@ -81,7 +94,14 @@ func (e *crispasrEngine) Transcribe(pcm []float32) (string, error) {
 		pcmPtr = (*C.float)(unsafe.Pointer(&pcm[0]))
 	}
 
-	r := C.crispasr_session_transcribe(e.session, pcmPtr, C.int(len(pcm)))
+	var r *C.crispasr_session_result
+	if lang != "" {
+		clang := C.CString(lang)
+		r = C.crispasr_session_transcribe_lang(e.session, pcmPtr, C.int(len(pcm)), clang)
+		C.free(unsafe.Pointer(clang))
+	} else {
+		r = C.crispasr_session_transcribe(e.session, pcmPtr, C.int(len(pcm)))
+	}
 	if r == nil {
 		return "", fmt.Errorf("transcription failed")
 	}
@@ -98,7 +118,7 @@ func (e *crispasrEngine) Transcribe(pcm []float32) (string, error) {
 }
 
 func init() {
-	backends["crispasr"] = func(modelPath string, threads int) (Engine, error) {
-		return newCrispasr(modelPath, threads)
+	backends["crispasr"] = func(modelPath string, threads int, lang string) (Engine, error) {
+		return newCrispasr(modelPath, threads, lang)
 	}
 }

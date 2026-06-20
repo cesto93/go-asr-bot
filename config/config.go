@@ -20,6 +20,9 @@ type Config struct {
 	MMProjPath string
 	YzmaLib    string
 
+	// Language hint for transcription (ISO 639-1, e.g. "en", "fr", "de")
+	Language string
+
 	// CrispASR backend (used when ASRBackend == "crispasr")
 	CrispasrModelPath string
 	CrispasrThreads   int
@@ -36,6 +39,7 @@ func Load() *Config {
 		UserID:        userID,
 
 		ASRBackend: "yzma",
+		Language:   os.Getenv("ASR_LANGUAGE"),
 
 		ModelPath:  envOrDefault("MODEL_PATH", "/opt/go-asr-bot/models/Qwen3-ASR-0.6B-Q8_0.gguf/Qwen3-ASR-0.6B-Q8_0.gguf"),
 		MMProjPath: envOrDefault("MMPROJ_PATH", "/opt/go-asr-bot/models/Qwen3-ASR-0.6B-Q8_0.gguf/mmproj-Qwen3-ASR-0.6B-Q8_0.gguf"),

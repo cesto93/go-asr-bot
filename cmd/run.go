@@ -10,7 +10,10 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var runModel string
+var (
+	runModel string
+	runLang  string
+)
 
 var runCmd = &cobra.Command{
 	Use:   "run <audio-file>",
@@ -19,6 +22,10 @@ var runCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		audioFile := args[0]
 		cfg := config.Load()
+
+		if runLang != "" {
+			cfg.Language = runLang
+		}
 
 		if runModel != "" {
 			v, ok := modelVariants[runModel]
@@ -80,7 +87,14 @@ var runCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
-		text, err := engine.Transcribe(pcm)
+		var lang string
+		if runLang != "" {
+			lang = runLang
+		} else {
+			lang = cfg.Language
+		}
+
+		text, err := engine.TranscribeLang(pcm, lang)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Failed to transcribe: %v\n", err)
 			os.Exit(1)
@@ -92,5 +106,6 @@ var runCmd = &cobra.Command{
 
 func init() {
 	runCmd.Flags().StringVar(&runModel, "model", "", "ASR model name (one of: qwen3-asr-0.6b-q8_0, qwen3-asr-0.6b-bf16, qwen3-asr-1.7b-q8_0, qwen3-asr-1.7b-bf16, cohere-transcribe-f16, cohere-transcribe-q8_0, cohere-transcribe-q4_k)")
+	runCmd.Flags().StringVar(&runLang, "lang", "", "Source language (ISO 639-1, e.g. en, fr, de)")
 	rootCmd.AddCommand(runCmd)
 }

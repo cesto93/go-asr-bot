@@ -14,6 +14,7 @@ type yzmaEngine struct {
 	MMProjFile string
 	LibPath    string
 
+	language   string
 	model      llama.Model
 	lctx       llama.Context
 	mctx       mtmd.Context
@@ -24,11 +25,12 @@ type yzmaEngine struct {
 	mu         sync.Mutex
 }
 
-func newYzma(modelFile, mmProjFile, libPath string) *yzmaEngine {
+func newYzma(modelFile, mmProjFile, libPath, language string) *yzmaEngine {
 	return &yzmaEngine{
 		ModelFile:  modelFile,
 		MMProjFile: mmProjFile,
 		LibPath:    libPath,
+		language:   language,
 	}
 }
 
@@ -102,6 +104,10 @@ func (e *yzmaEngine) Close() {
 }
 
 func (e *yzmaEngine) Transcribe(pcm []float32) (string, error) {
+	return e.TranscribeLang(pcm, e.language)
+}
+
+func (e *yzmaEngine) TranscribeLang(pcm []float32, lang string) (string, error) {
 	if !e.ready {
 		return "", fmt.Errorf("engine not initialized")
 	}
@@ -112,7 +118,7 @@ func (e *yzmaEngine) Transcribe(pcm []float32) (string, error) {
 	bitmap := mtmd.BitmapInitFromAudio(uint64(len(pcm)), &pcm[0])
 	defer mtmd.BitmapFree(bitmap)
 
-	prompt := e.buildPrompt()
+	prompt := e.buildPrompt(lang)
 	input := mtmd.NewInputText(prompt, true, true)
 	output := mtmd.InputChunksInit()
 	defer mtmd.InputChunksFree(output)
@@ -165,12 +171,17 @@ func (e *yzmaEngine) SampleRate() int {
 	return e.sampleRate
 }
 
-func (e *yzmaEngine) buildPrompt() string {
+func (e *yzmaEngine) buildPrompt(lang string) string {
+	instruction := "Transcribe the audio."
+	if lang != "" {
+		instruction = "Transcribe the audio in " + lang + "."
+	}
+
 	template := llama.ModelChatTemplate(e.model, "")
 	if template != "" {
 		messages := []llama.ChatMessage{
 			llama.NewChatMessage("system", "You are a helpful assistant."),
-			llama.NewChatMessage("user", mtmd.DefaultMarker()+"Transcribe the audio."),
+			llama.NewChatMessage("user", mtmd.DefaultMarker()+instruction),
 		}
 		buf := make([]byte, 16536)
 		l := llama.ChatApplyTemplate(template, messages, true, buf)
@@ -178,5 +189,5 @@ func (e *yzmaEngine) buildPrompt() string {
 			return string(buf[:l])
 		}
 	}
-	return mtmd.DefaultMarker() + "Transcribe the audio."
+	return mtmd.DefaultMarker() + instruction
 }

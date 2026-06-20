@@ -6,14 +6,14 @@ import (
 	"github.com/cesto93/go-asr-bot/config"
 )
 
-type backendFactory func(modelPath string, threads int) (Engine, error)
+type backendFactory func(modelPath string, threads int, lang string) (Engine, error)
 
 var backends = map[string]backendFactory{}
 
 func NewFromConfig(cfg *config.Config) (Engine, error) {
 	switch cfg.ASRBackend {
 	case "yzma":
-		e := newYzma(cfg.ModelPath, cfg.MMProjPath, cfg.YzmaLib)
+		e := newYzma(cfg.ModelPath, cfg.MMProjPath, cfg.YzmaLib, cfg.Language)
 		if err := e.Init(); err != nil {
 			return nil, fmt.Errorf("yzma init: %w", err)
 		}
@@ -24,7 +24,7 @@ func NewFromConfig(cfg *config.Config) (Engine, error) {
 		if !ok {
 			return nil, fmt.Errorf("crispasr backend not available; rebuild with CGO_ENABLED=1")
 		}
-		return fn(cfg.CrispasrModelPath, cfg.CrispasrThreads)
+		return fn(cfg.CrispasrModelPath, cfg.CrispasrThreads, cfg.Language)
 
 	default:
 		return nil, fmt.Errorf("unknown ASR backend: %q", cfg.ASRBackend)
