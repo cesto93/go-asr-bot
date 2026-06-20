@@ -58,9 +58,6 @@ TELEGRAM_BOT_TOKEN=your_bot_token_here
 DEBUG=false
 USER_ID=0
 
-# Backend: "yzma" (default) or "crispasr"
-ASR_BACKEND=yzma
-
 # Language hint (ISO 639-1, e.g. en, fr, de)
 ASR_LANGUAGE=
 
