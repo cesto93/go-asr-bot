@@ -2,12 +2,15 @@ package config
 
 import (
 	"os"
-	"strconv"
 
 	"github.com/joho/godotenv"
+	"github.com/spf13/viper"
 )
 
-const DefaultYZMALib = "/opt/go-asr-bot/llamacpp"
+const (
+	DefaultYZMALib = "/opt/go-asr-bot/llamacpp"
+	ConfigPath     = "/opt/go-asr/config.yaml"
+)
 
 type Config struct {
 	TelegramToken string
@@ -26,30 +29,46 @@ type Config struct {
 func Load() *Config {
 	godotenv.Load()
 
-	userID, _ := strconv.ParseInt(os.Getenv("USER_ID"), 10, 64)
+	v := viper.New()
+	v.SetConfigFile(ConfigPath)
+	v.SetConfigType("yaml")
+
+	v.SetDefault("debug", false)
+	v.SetDefault("user_id", 0)
+	v.SetDefault("language", "")
+	v.SetDefault("default_model", "qwen3-asr-0.6b-q8_0")
+	v.SetDefault("crispasr_threads", 4)
+
+	v.BindEnv("debug", "DEBUG")
+	v.BindEnv("user_id", "USER_ID")
+	v.BindEnv("language", "ASR_LANGUAGE")
+	v.BindEnv("default_model", "ASR_DEFAULT_MODEL")
+	v.BindEnv("crispasr_threads", "CRISPASR_THREADS")
+
+	v.ReadInConfig()
 
 	return &Config{
 		TelegramToken:   os.Getenv("TELEGRAM_BOT_TOKEN"),
-		Debug:           os.Getenv("DEBUG") == "true",
-		UserID:          userID,
-		Language:        os.Getenv("ASR_LANGUAGE"),
-		DefaultModel:    envOrDefault("ASR_DEFAULT_MODEL", "qwen3-asr-0.6b-q8_0"),
-		CrispasrThreads: envOrDefaultInt("CRISPASR_THREADS", 4),
+		Debug:           v.GetBool("debug"),
+		UserID:          v.GetInt64("user_id"),
+		Language:        v.GetString("language"),
+		DefaultModel:    v.GetString("default_model"),
+		CrispasrThreads: v.GetInt("crispasr_threads"),
 	}
 }
 
-func envOrDefault(key, def string) string {
-	if v := os.Getenv(key); v != "" {
-		return v
-	}
-	return def
-}
+func Save(cfg *Config) error {
+	v := viper.New()
+	v.SetConfigFile(ConfigPath)
+	v.SetConfigType("yaml")
 
-func envOrDefaultInt(key string, def int) int {
-	if v := os.Getenv(key); v != "" {
-		if n, err := strconv.Atoi(v); err == nil {
-			return n
-		}
-	}
-	return def
+	v.Set("debug", cfg.Debug)
+	v.Set("user_id", cfg.UserID)
+	v.Set("language", cfg.Language)
+	v.Set("default_model", cfg.DefaultModel)
+	v.Set("crispasr_threads", cfg.CrispasrThreads)
+
+	os.MkdirAll("/opt/go-asr", 0755)
+
+	return v.WriteConfig()
 }
