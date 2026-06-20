@@ -18,18 +18,27 @@ fi
 
 command -v go >/dev/null 2>&1 || { echo "Go is not installed. Install Go first: https://go.dev/dl/" >&2; exit 1; }
 
-# Build CrispASR C library if the submodule and build tools are available
+# Build CrispASR C library if submodule and build tools are available
 CGO_ENABLED=0
-if [ -f "${REPO_DIR}/lib/crispasr/CMakeLists.txt" ]; then
-	if command -v cmake >/dev/null 2>&1 && command -v gcc >/dev/null 2>&1; then
+if command -v cmake >/dev/null 2>&1 && command -v gcc >/dev/null 2>&1; then
+	if [ -f "${REPO_DIR}/lib/crispasr/CMakeLists.txt" ]; then
+		CRISPASR_BUILD=1
+	elif [ -d "${REPO_DIR}/.git" ] && [ -f "${REPO_DIR}/.gitmodules" ]; then
+		echo "Initializing CrispASR submodule..."
+		git -C "${REPO_DIR}" submodule update --init lib/crispasr
+		CRISPASR_BUILD=1
+	else
+		echo "CrispASR submodule not available — building without CrispASR" >&2
+	fi
+	if [ "${CRISPASR_BUILD:-0}" -eq 1 ]; then
 		echo "Building CrispASR C library..."
 		cmake -S "${REPO_DIR}/lib/crispasr" -B "${REPO_DIR}/lib/crispasr/build" \
 			-DBUILD_SHARED_LIBS=ON -DCMAKE_BUILD_TYPE=Release
 		cmake --build "${REPO_DIR}/lib/crispasr/build" --target crispasr -j"$(nproc)"
 		CGO_ENABLED=1
-	else
-		echo "CrispASR submodule found but cmake/gcc missing — building without CrispASR" >&2
 	fi
+else
+	echo "cmake/gcc not found — building without CrispASR" >&2
 fi
 
 echo "Building ${BIN_NAME} binary..."
@@ -120,4 +129,4 @@ echo "Service commands:"
 echo "  systemctl status ${SERVICE_NAME}"
 echo "  journalctl -u ${SERVICE_NAME} -f"
 echo ""
-echo "To use CrispASR backend, build libcrispasr.so in lib/crispasr/ and set ASR_BACKEND=crispasr in .env"
+echo "To switch to the CrispASR backend, set ASR_BACKEND=crispasr in ${INSTALL_DIR}/.env"

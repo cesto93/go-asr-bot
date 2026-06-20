@@ -41,6 +41,48 @@ cp .env.example .env
 go-asr-bot
 ```
 
+## Install as a service
+
+A systemd service with automatic restarts can be set up via the install script:
+
+```bash
+# As root
+sudo ./scripts/install.sh
+```
+
+This will:
+- Build the binary (optionally with CrispASR support if cmake/gcc are available)
+- Create the `go-asr-bot` system user
+- Create `/opt/go-asr-bot/` with a `.env` template
+- Pull llama.cpp libraries and the default yzma model
+- Install and start the systemd service
+
+### Managing the service
+
+```bash
+sudo systemctl status go-asr-bot
+sudo journalctl -u go-asr-bot -f
+sudo systemctl restart go-asr-bot
+```
+
+### CrispASR backend
+
+The install script auto-detects if cmake/gcc are available, initializes the CrispASR submodule, and builds `libcrispasr.so` — no manual steps needed:
+
+```bash
+sudo ./scripts/install.sh
+```
+
+After installation, edit `/opt/go-asr-bot/.env` and set `ASR_BACKEND=crispasr` and the appropriate `CRISPASR_MODEL_PATH`.
+
+### Uninstall
+
+```bash
+sudo ./scripts/uninstall.sh
+```
+
+The data directory `/opt/go-asr-bot` is preserved — remove it manually with `rm -rf /opt/go-asr-bot` if desired.
+
 ## Build CrispASR C library
 
 ```bash
