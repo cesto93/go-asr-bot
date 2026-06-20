@@ -16,7 +16,7 @@ type Bot struct {
 	authorizedUserID int64
 }
 
-func New(cfg *config.Config) (*Bot, error) {
+func New(cfg *config.Config, modelPath, mmprojPath, backend string) (*Bot, error) {
 	api, err := tgbotapi.NewBotAPI(cfg.TelegramToken)
 	if err != nil {
 		return nil, err
@@ -25,7 +25,7 @@ func New(cfg *config.Config) (*Bot, error) {
 	api.Debug = cfg.Debug
 	log.Printf("Authorized on account %s", api.Self.UserName)
 
-	asrEngine, err := asr.NewFromConfig(cfg)
+	asrEngine, err := asr.NewFromConfig(cfg, modelPath, mmprojPath, backend)
 	if err != nil {
 		return nil, err
 	}

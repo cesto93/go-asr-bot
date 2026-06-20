@@ -33,45 +33,36 @@ var rootCmd = &cobra.Command{
 			cfg.Language = flagLang
 		}
 
-		if flagModel != "" {
-			v, ok := modelVariants[flagModel]
-			if !ok {
-				log.Fatalf("unknown model %q (available: qwen3-asr-0.6b-q8_0, qwen3-asr-0.6b-bf16, qwen3-asr-1.7b-q8_0, qwen3-asr-1.7b-bf16, cohere-transcribe-f16, cohere-transcribe-q8_0, cohere-transcribe-q4_k, parakeet-tdt-0.6b-v3, parakeet-tdt-0.6b-v3-q8_0, parakeet-tdt-0.6b-v3-q5_0, parakeet-tdt-0.6b-v3-q4_k)", flagModel)
-			}
-
-			switch v.backend {
-			case "yzma":
-				cfg.ModelPath = resolveModelPath(v, v.modelFile)
-				if v.mmprojFile != "" {
-					cfg.MMProjPath = resolveModelPath(v, v.mmprojFile)
-				}
-			case "crispasr":
-				cfg.CrispasrModelPath = resolveModelPath(v, v.modelFile)
-			}
+		modelName := flagModel
+		if modelName == "" {
+			modelName = cfg.DefaultModel
 		}
+		v, ok := modelVariants[modelName]
+		if !ok {
+			log.Fatalf("unknown model %q", modelName)
+		}
+
+		modelPath := resolveModelPath(v, v.modelFile)
+		var mmprojPath string
+		if v.mmprojFile != "" {
+			mmprojPath = resolveModelPath(v, v.mmprojFile)
+		}
+		backend := v.backend
+
 		if cfg.TelegramToken == "" {
 			log.Fatal("TELEGRAM_BOT_TOKEN environment variable is not set")
 		}
 
-		backend := "yzma"
-		if flagModel != "" {
-			backend = modelVariants[flagModel].backend
+		if _, err := os.Stat(modelPath); os.IsNotExist(err) {
+			log.Fatalf("Model file not found at %s", modelPath)
 		}
 		if backend == "yzma" {
-			if _, err := os.Stat(cfg.ModelPath); os.IsNotExist(err) {
-				log.Fatalf("Model file not found at %s", cfg.ModelPath)
-			}
-			if _, err := os.Stat(cfg.MMProjPath); os.IsNotExist(err) {
-				log.Fatalf("Multimodal projector file not found at %s", cfg.MMProjPath)
-			}
-		}
-		if backend == "crispasr" {
-			if _, err := os.Stat(cfg.CrispasrModelPath); os.IsNotExist(err) {
-				log.Fatalf("CrispASR model file not found at %s", cfg.CrispasrModelPath)
+			if _, err := os.Stat(mmprojPath); os.IsNotExist(err) {
+				log.Fatalf("Multimodal projector file not found at %s", mmprojPath)
 			}
 		}
 
-		b, err := bot.New(cfg)
+		b, err := bot.New(cfg, modelPath, mmprojPath, backend)
 		if err != nil {
 			log.Fatalf("Failed to create bot: %v", err)
 		}

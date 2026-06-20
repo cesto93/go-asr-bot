@@ -14,16 +14,13 @@ type Config struct {
 	Debug         bool
 	UserID        int64
 
-	// yzma/Qwen3-ASR backend
-	ModelPath  string
-	MMProjPath string
-
 	// Language hint for transcription (ISO 639-1, e.g. "en", "fr", "de")
 	Language string
 
-	// CrispASR backend
-	CrispasrModelPath string
-	CrispasrThreads   int
+	// DefaultModel is the model variant used when no --model flag is given
+	DefaultModel string
+
+	CrispasrThreads int
 }
 
 func Load() *Config {
@@ -32,17 +29,12 @@ func Load() *Config {
 	userID, _ := strconv.ParseInt(os.Getenv("USER_ID"), 10, 64)
 
 	return &Config{
-		TelegramToken: os.Getenv("TELEGRAM_BOT_TOKEN"),
-		Debug:         os.Getenv("DEBUG") == "true",
-		UserID:        userID,
-
-		Language: os.Getenv("ASR_LANGUAGE"),
-
-		ModelPath:  envOrDefault("MODEL_PATH", "/opt/go-asr-bot/models/Qwen3-ASR-0.6B-Q8_0.gguf/Qwen3-ASR-0.6B-Q8_0.gguf"),
-		MMProjPath: envOrDefault("MMPROJ_PATH", "/opt/go-asr-bot/models/Qwen3-ASR-0.6B-Q8_0.gguf/mmproj-Qwen3-ASR-0.6B-Q8_0.gguf"),
-
-		CrispasrModelPath: envOrDefault("CRISPASR_MODEL_PATH", "/opt/go-asr-bot/models/parakeet-tdt-0.6b-v3-q4_k.gguf/parakeet-tdt-0.6b-v3-q4_k.gguf"),
-		CrispasrThreads:   envOrDefaultInt("CRISPASR_THREADS", 4),
+		TelegramToken:   os.Getenv("TELEGRAM_BOT_TOKEN"),
+		Debug:           os.Getenv("DEBUG") == "true",
+		UserID:          userID,
+		Language:        os.Getenv("ASR_LANGUAGE"),
+		DefaultModel:    envOrDefault("ASR_DEFAULT_MODEL", "qwen3-asr-0.6b-q8_0"),
+		CrispasrThreads: envOrDefaultInt("CRISPASR_THREADS", 4),
 	}
 }
 

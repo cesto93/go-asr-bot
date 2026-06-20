@@ -10,14 +10,19 @@ type backendFactory func(modelPath string, threads int, lang string) (Engine, er
 
 var backends = map[string]backendFactory{}
 
-func NewFromConfig(cfg *config.Config) (Engine, error) {
-	if fn, ok := backends["crispasr"]; ok {
-		return fn(cfg.CrispasrModelPath, cfg.CrispasrThreads, cfg.Language)
+func NewFromConfig(cfg *config.Config, modelPath, mmprojPath, backend string) (Engine, error) {
+	switch backend {
+	case "crispasr":
+		fn, ok := backends["crispasr"]
+		if !ok {
+			return nil, fmt.Errorf("crispasr backend not available (CGO disabled?)")
+		}
+		return fn(modelPath, cfg.CrispasrThreads, cfg.Language)
+	default:
+		e := newYzma(modelPath, mmprojPath, config.DefaultYZMALib, cfg.Language)
+		if err := e.Init(); err != nil {
+			return nil, fmt.Errorf("yzma init: %w", err)
+		}
+		return e, nil
 	}
-
-	e := newYzma(cfg.ModelPath, cfg.MMProjPath, config.DefaultYZMALib, cfg.Language)
-	if err := e.Init(); err != nil {
-		return nil, fmt.Errorf("yzma init: %w", err)
-	}
-	return e, nil
 }

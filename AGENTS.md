@@ -13,35 +13,21 @@ ASR transcription via two backends:
 TELEGRAM_BOT_TOKEN=your_token go run .
 
 # CrispASR (requires building libcrispasr.so in lib/crispasr/)
-CGO_ENABLED=1 ASR_BACKEND=crispasr go run .
-
-# Or pick a model — backend is auto-detected from the variant
 CGO_ENABLED=1 go run . --model parakeet-tdt-0.6b-v3-q4_k
 ```
 
 ## Configuration
 
-| Variable             | Description                   | Default |
-| -------------------- | ----------------------------- | ------- |
-| `TELEGRAM_BOT_TOKEN` | Bot token from BotFather     | (required) |
-| `DEBUG`              | Enable debug logging          | `false` |
-| `USER_ID`            | Restrict to single user       | `0` (all) |
-| `ASR_BACKEND`        | Backend: `yzma` or `crispasr` | `yzma` |
+| Variable             | Description                     | Default |
+| -------------------- | ------------------------------- | ------- |
+| `TELEGRAM_BOT_TOKEN` | Bot token from BotFather       | (required) |
+| `DEBUG`              | Enable debug logging            | `false` |
+| `USER_ID`            | Restrict to single user         | `0` (all) |
+| `ASR_DEFAULT_MODEL`  | Default model variant           | `qwen3-asr-0.6b-q8_0` |
+| `ASR_LANGUAGE`       | Source language (ISO 639-1)     | (none) |
+| `CRISPASR_THREADS`   | CPU threads for CrispASR        | `4` |
 
-### yzma backend
-
-| Variable       | Description                   | Default |
-| -------------- | ----------------------------- | ------- |
-| `MODEL_PATH`   | Path to Qwen3-ASR GGUF model  | `/opt/go-asr-bot/models/Qwen3-ASR-0.6B-Q8_0.gguf/Qwen3-ASR-0.6B-Q8_0.gguf` |
-| `MMPROJ_PATH`  | Path to multimodal projector   | `/opt/go-asr-bot/models/Qwen3-ASR-0.6B-Q8_0.gguf/mmproj-Qwen3-ASR-0.6B-Q8_0.gguf` |
-| `YZMA_LIB`     | Directory with llama.cpp .so  | `/opt/go-asr-bot/llamacpp` |
-
-### CrispASR backend
-
-| Variable              | Description                  | Default |
-| --------------------- | ---------------------------- | ------- |
-| `CRISPASR_MODEL_PATH` | Path to any CrispASR GGUF    | `/opt/go-asr-bot/models/parakeet-tdt-0.6b-v3-q4_k.gguf/parakeet-tdt-0.6b-v3-q4_k.gguf` |
-| `CRISPASR_THREADS`    | CPU threads                  | `4` |
+Model paths are always inferred from the selected model variant (via `--model` flag or `ASR_DEFAULT_MODEL`).
 
 ## Pull models
 

@@ -27,54 +27,43 @@ var runCmd = &cobra.Command{
 			cfg.Language = runLang
 		}
 
-		if runModel != "" {
-			v, ok := modelVariants[runModel]
-			if !ok {
-				fmt.Printf("unknown model %q\n\navailable variants:\n", runModel)
-				keys := make([]string, 0, len(modelVariants))
-				for k := range modelVariants {
-					keys = append(keys, k)
-				}
-				sort.Strings(keys)
-				for _, k := range keys {
-					fmt.Printf("  %s\n", k)
-				}
-				os.Exit(1)
+		modelName := runModel
+		if modelName == "" {
+			modelName = cfg.DefaultModel
+		}
+		v, ok := modelVariants[modelName]
+		if !ok {
+			fmt.Printf("unknown model %q\n\navailable variants:\n", modelName)
+			keys := make([]string, 0, len(modelVariants))
+			for k := range modelVariants {
+				keys = append(keys, k)
 			}
-
-			switch v.backend {
-			case "yzma":
-				cfg.ModelPath = resolveModelPath(v, v.modelFile)
-				if v.mmprojFile != "" {
-					cfg.MMProjPath = resolveModelPath(v, v.mmprojFile)
-				}
-			case "crispasr":
-				cfg.CrispasrModelPath = resolveModelPath(v, v.modelFile)
+			sort.Strings(keys)
+			for _, k := range keys {
+				fmt.Printf("  %s\n", k)
 			}
+			os.Exit(1)
 		}
 
-		backend := "yzma"
-		if runModel != "" {
-			backend = modelVariants[runModel].backend
+		modelPath := resolveModelPath(v, v.modelFile)
+		var mmprojPath string
+		if v.mmprojFile != "" {
+			mmprojPath = resolveModelPath(v, v.mmprojFile)
+		}
+		backend := v.backend
+
+		if _, err := os.Stat(modelPath); os.IsNotExist(err) {
+			fmt.Fprintf(os.Stderr, "Model file not found at %s\n", modelPath)
+			os.Exit(1)
 		}
 		if backend == "yzma" {
-			if _, err := os.Stat(cfg.ModelPath); os.IsNotExist(err) {
-				fmt.Fprintf(os.Stderr, "Model file not found at %s\n", cfg.ModelPath)
-				os.Exit(1)
-			}
-			if _, err := os.Stat(cfg.MMProjPath); os.IsNotExist(err) {
-				fmt.Fprintf(os.Stderr, "Multimodal projector file not found at %s\n", cfg.MMProjPath)
-				os.Exit(1)
-			}
-		}
-		if backend == "crispasr" {
-			if _, err := os.Stat(cfg.CrispasrModelPath); os.IsNotExist(err) {
-				fmt.Fprintf(os.Stderr, "CrispASR model file not found at %s\n", cfg.CrispasrModelPath)
+			if _, err := os.Stat(mmprojPath); os.IsNotExist(err) {
+				fmt.Fprintf(os.Stderr, "Multimodal projector file not found at %s\n", mmprojPath)
 				os.Exit(1)
 			}
 		}
 
-		engine, err := asr.NewFromConfig(cfg)
+		engine, err := asr.NewFromConfig(cfg, modelPath, mmprojPath, backend)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Failed to initialize ASR engine: %v\n", err)
 			os.Exit(1)
