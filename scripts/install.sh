@@ -40,6 +40,7 @@ echo "Creating user ${USER_NAME}..."
 id -u "${USER_NAME}" &>/dev/null || useradd -r -s /usr/sbin/nologin -d "${INSTALL_DIR}" "${USER_NAME}"
 
 mkdir -p "${INSTALL_DIR}"
+chown -R "${USER_NAME}:" "${INSTALL_DIR}"
 
 if [ ! -f "${INSTALL_DIR}/.env" ]; then
 	echo "Creating ${INSTALL_DIR}/.env..."
@@ -71,8 +72,6 @@ sudo -u "${USER_NAME}" "${BIN_PATH}" pull --upgrade 2>/dev/null || echo "  (skip
 
 echo "Pulling default model (qwen3-asr-0.6b-q8_0)..."
 sudo -u "${USER_NAME}" "${BIN_PATH}" pull --model qwen3-asr-0.6b-q8_0 --upgrade 2>/dev/null || echo "  (skipped — run '${BIN_PATH} pull --model qwen3-asr-0.6b-q8_0' manually)"
-
-chown -R "${USER_NAME}:" "${INSTALL_DIR}"
 
 cat > "${SERVICE_PATH}" <<UNIT
 [Unit]
