@@ -7,6 +7,8 @@ import (
 	"github.com/joho/godotenv"
 )
 
+const DefaultYZMALib = "/opt/go-asr-bot/llamacpp"
+
 type Config struct {
 	TelegramToken string
 	Debug         bool
@@ -15,7 +17,6 @@ type Config struct {
 	// yzma/Qwen3-ASR backend
 	ModelPath  string
 	MMProjPath string
-	YzmaLib    string
 
 	// Language hint for transcription (ISO 639-1, e.g. "en", "fr", "de")
 	Language string
@@ -39,7 +40,6 @@ func Load() *Config {
 
 		ModelPath:  envOrDefault("MODEL_PATH", "/opt/go-asr-bot/models/Qwen3-ASR-0.6B-Q8_0.gguf/Qwen3-ASR-0.6B-Q8_0.gguf"),
 		MMProjPath: envOrDefault("MMPROJ_PATH", "/opt/go-asr-bot/models/Qwen3-ASR-0.6B-Q8_0.gguf/mmproj-Qwen3-ASR-0.6B-Q8_0.gguf"),
-		YzmaLib:    envOrDefault("YZMA_LIB", "/opt/go-asr-bot/llamacpp"),
 
 		CrispasrModelPath: envOrDefault("CRISPASR_MODEL_PATH", "/opt/go-asr-bot/models/parakeet-tdt-0.6b-v3-q4_k.gguf/parakeet-tdt-0.6b-v3-q4_k.gguf"),
 		CrispasrThreads:   envOrDefaultInt("CRISPASR_THREADS", 4),

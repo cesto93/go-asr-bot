@@ -15,7 +15,7 @@ func NewFromConfig(cfg *config.Config) (Engine, error) {
 		return fn(cfg.CrispasrModelPath, cfg.CrispasrThreads, cfg.Language)
 	}
 
-	e := newYzma(cfg.ModelPath, cfg.MMProjPath, cfg.YzmaLib, cfg.Language)
+	e := newYzma(cfg.ModelPath, cfg.MMProjPath, config.DefaultYZMALib, cfg.Language)
 	if err := e.Init(); err != nil {
 		return nil, fmt.Errorf("yzma init: %w", err)
 	}
