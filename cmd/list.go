@@ -155,10 +155,7 @@ func modelVariantName(filename string) string {
 func determineBackend(name string) string {
 	for _, v := range modelVariants {
 		if v.modelFile == name {
-			if v.mmprojFile != "" {
-				return "yzma"
-			}
-			return "crispasr"
+			return v.backend
 		}
 	}
 	if strings.Contains(name, "Qwen3-ASR") || strings.Contains(name, "qwen3-asr") {

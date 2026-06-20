@@ -10,10 +10,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var (
-	runModel   string
-	runBackend string
-)
+var runModel string
 
 var runCmd = &cobra.Command{
 	Use:   "run <audio-file>",
@@ -22,10 +19,6 @@ var runCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		audioFile := args[0]
 		cfg := config.Load()
-
-		if runBackend != "" {
-			cfg.ASRBackend = runBackend
-		}
 
 		if runModel != "" {
 			v, ok := modelVariants[runModel]
@@ -41,6 +34,8 @@ var runCmd = &cobra.Command{
 				}
 				os.Exit(1)
 			}
+
+			cfg.ASRBackend = v.backend
 
 			switch cfg.ASRBackend {
 			case "yzma":
@@ -97,6 +92,5 @@ var runCmd = &cobra.Command{
 
 func init() {
 	runCmd.Flags().StringVar(&runModel, "model", "", "ASR model name (one of: qwen3-asr-0.6b-q8_0, qwen3-asr-0.6b-bf16, qwen3-asr-1.7b-q8_0, qwen3-asr-1.7b-bf16, cohere-transcribe-f16, cohere-transcribe-q8_0, cohere-transcribe-q4_k)")
-	runCmd.Flags().StringVar(&runBackend, "backend", "", "ASR backend: yzma or crispasr (overrides ASR_BACKEND)")
 	rootCmd.AddCommand(runCmd)
 }

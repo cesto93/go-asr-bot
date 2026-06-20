@@ -13,14 +13,10 @@ import (
 
 const modelsDir = "/opt/go-asr-bot/models"
 
-var (
-	flagModel   string
-	flagBackend string
-)
+var flagModel string
 
 func init() {
 	rootCmd.Flags().StringVar(&flagModel, "model", "", "ASR model name (one of: qwen3-asr-0.6b-q8_0, qwen3-asr-0.6b-bf16, qwen3-asr-1.7b-q8_0, qwen3-asr-1.7b-bf16, cohere-transcribe-f16, cohere-transcribe-q8_0, cohere-transcribe-q4_k)")
-	rootCmd.Flags().StringVar(&flagBackend, "backend", "", "ASR backend: yzma or crispasr (overrides ASR_BACKEND)")
 }
 
 var rootCmd = &cobra.Command{
@@ -29,15 +25,13 @@ var rootCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		cfg := config.Load()
 
-		if flagBackend != "" {
-			cfg.ASRBackend = flagBackend
-		}
-
 		if flagModel != "" {
 			v, ok := modelVariants[flagModel]
 			if !ok {
 				log.Fatalf("unknown model %q (available: qwen3-asr-0.6b-q8_0, qwen3-asr-0.6b-bf16, qwen3-asr-1.7b-q8_0, qwen3-asr-1.7b-bf16, cohere-transcribe-f16, cohere-transcribe-q8_0, cohere-transcribe-q4_k)", flagModel)
 			}
+
+			cfg.ASRBackend = v.backend
 
 			switch cfg.ASRBackend {
 			case "yzma":

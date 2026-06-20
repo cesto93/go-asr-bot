@@ -64,6 +64,7 @@ type modelVariant struct {
 	modelFile  string
 	mmprojFile string
 	baseURL    string
+	backend    string
 }
 
 var modelVariants = map[string]modelVariant{
@@ -71,33 +72,40 @@ var modelVariants = map[string]modelVariant{
 		modelFile:  "Qwen3-ASR-0.6B-Q8_0.gguf",
 		mmprojFile: "mmproj-Qwen3-ASR-0.6B-Q8_0.gguf",
 		baseURL:    "https://huggingface.co/ggml-org/Qwen3-ASR-0.6B-GGUF/resolve/main",
+		backend:    "yzma",
 	},
 	"qwen3-asr-0.6b-bf16": {
 		modelFile:  "Qwen3-ASR-0.6B-bf16.gguf",
 		mmprojFile: "mmproj-Qwen3-ASR-0.6B-bf16.gguf",
 		baseURL:    "https://huggingface.co/ggml-org/Qwen3-ASR-0.6B-GGUF/resolve/main",
+		backend:    "yzma",
 	},
 	"qwen3-asr-1.7b-q8_0": {
 		modelFile:  "Qwen3-ASR-1.7B-Q8_0.gguf",
 		mmprojFile: "mmproj-Qwen3-ASR-1.7B-Q8_0.gguf",
 		baseURL:    "https://huggingface.co/ggml-org/Qwen3-ASR-1.7B-GGUF/resolve/main",
+		backend:    "yzma",
 	},
 	"qwen3-asr-1.7b-bf16": {
 		modelFile:  "Qwen3-ASR-1.7B-bf16.gguf",
 		mmprojFile: "mmproj-Qwen3-ASR-1.7B-bf16.gguf",
 		baseURL:    "https://huggingface.co/ggml-org/Qwen3-ASR-1.7B-GGUF/resolve/main",
+		backend:    "yzma",
 	},
 	"cohere-transcribe-f16": {
 		modelFile:  "cohere-transcribe.gguf",
 		baseURL:    "https://huggingface.co/cstr/cohere-transcribe-03-2026-GGUF/resolve/main",
+		backend:    "crispasr",
 	},
 	"cohere-transcribe-q8_0": {
 		modelFile:  "cohere-transcribe-q8_0.gguf",
 		baseURL:    "https://huggingface.co/cstr/cohere-transcribe-03-2026-GGUF/resolve/main",
+		backend:    "crispasr",
 	},
 	"cohere-transcribe-q4_k": {
 		modelFile:  "cohere-transcribe-q4_k.gguf",
 		baseURL:    "https://huggingface.co/cstr/cohere-transcribe-03-2026-GGUF/resolve/main",
+		backend:    "crispasr",
 	},
 }
 

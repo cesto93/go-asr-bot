@@ -35,7 +35,7 @@ func Load() *Config {
 		Debug:         os.Getenv("DEBUG") == "true",
 		UserID:        userID,
 
-		ASRBackend: envOrDefault("ASR_BACKEND", "yzma"),
+		ASRBackend: "yzma",
 
 		ModelPath:  envOrDefault("MODEL_PATH", "/opt/go-asr-bot/models/Qwen3-ASR-0.6B-Q8_0.gguf/Qwen3-ASR-0.6B-Q8_0.gguf"),
 		MMProjPath: envOrDefault("MMPROJ_PATH", "/opt/go-asr-bot/models/Qwen3-ASR-0.6B-Q8_0.gguf/mmproj-Qwen3-ASR-0.6B-Q8_0.gguf"),
