@@ -26,6 +26,9 @@ func (pr *progressReader) Read(p []byte) (int, error) {
 	n, err := pr.r.Read(p)
 	pr.current += int64(n)
 	pct := int(pr.current * 100 / pr.total)
+	if pct > 100 {
+		pct = 100
+	}
 	if pct != pr.lastPct {
 		pr.lastPct = pct
 		pr.print()
@@ -37,7 +40,12 @@ func (pr *progressReader) print() {
 	cur := humanSize(pr.current)
 	tot := humanSize(pr.total)
 	filled := pr.barWidth * pr.lastPct / 100
-	bar := strings.Repeat("=", filled) + ">" + strings.Repeat(" ", pr.barWidth-filled-1)
+	bar := strings.Repeat("=", filled)
+	if filled < pr.barWidth {
+		bar += ">" + strings.Repeat(" ", pr.barWidth-filled-1)
+	} else {
+		bar += "="
+	}
 	fmt.Fprintf(os.Stderr, "\r  %s [%s] %3d%% (%s/%s)", pr.label, bar, pr.lastPct, cur, tot)
 }
 
