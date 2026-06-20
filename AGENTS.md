@@ -42,6 +42,8 @@ CGO_ENABLED=1 ASR_BACKEND=crispasr go run .
 
 ## Pull models
 
+Model downloads use direct HTTP (not yzma's go-getter), with a live progress bar:
+
 ```bash
 # yzma models (Qwen3-ASR)
 go run . pull --model qwen3-asr-0.6b-q8_0
@@ -51,6 +53,9 @@ go run . pull --model qwen3-asr-1.7b-q8_0
 go run . pull --model cohere-transcribe-q8_0
 go run . pull --model cohere-transcribe-q4_k
 go run . pull --model cohere-transcribe-f16
+
+# List downloaded models
+go run . list
 
 # llama.cpp libraries (for yzma backend)
 go run . pull
@@ -70,7 +75,7 @@ Then build the bot with `CGO_ENABLED=1`.
 
 ```
 main.go              # entry point, graceful shutdown
-cmd/                 # cobra commands (root, pull, list)
+cmd/                 # cobra commands (root, pull, list, run)
 config/config.go     # env-based config
 internal/asr/        # Engine interface + backends (yzma, crispasr)
 internal/bot/bot.go  # bot struct, long-polling updates loop
@@ -92,6 +97,11 @@ Each model variant lives in its own subdirectory named after the model `.gguf` f
 └── cohere-transcribe-q4_k.gguf/
     └── cohere-transcribe-q4_k.gguf
 ```
+
+## Notes
+
+- Model download uses `net/http` directly (not yzma's `download.GetModel`/go-getter), writing files straight to the destination path without extra directory nesting. A terminal progress bar shows percentage and sizes.
+- If a model directory contains a subdirectory instead of the expected file (e.g. from an older download), `resolveModelPath` in `cmd/pull.go` drills one level deeper automatically.
 
 ## Conventions
 

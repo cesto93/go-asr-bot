@@ -10,7 +10,7 @@ Built with `github.com/go-telegram-bot-api/telegram-bot-api/v5`.
 
 - Go 1.26+
 - A Telegram bot token from [@BotFather](https://t.me/BotFather)
-- For yzma: llama.cpp shared libraries in `llamacpp/` (or configured path)
+- For yzma: llama.cpp shared libraries in `/opt/go-asr-bot/llamacpp` (or configured path)
 - For CrispASR: `libcrispasr.so` built from source (see [Build CrispASR](#build-crispasr-c-library))
 
 ## Quick start
@@ -30,6 +30,9 @@ go install github.com/cesto93/go-asr-bot@latest
 
 # Pull llama.cpp libraries
 go-asr-bot pull
+
+# Pull a model
+go-asr-bot pull --model qwen3-asr-0.6b-q8_0
 
 # Copy and edit the environment file
 cp .env.example .env
@@ -61,24 +64,51 @@ Then build the bot with `CGO_ENABLED=1`.
 
 | Variable       | Description                   | Default |
 | -------------- | ----------------------------- | ------- |
-| `MODEL_PATH`   | Path to Qwen3-ASR GGUF model  | `models/Qwen3-ASR-0.6B-Q8_0.gguf` |
-| `MMPROJ_PATH`  | Path to multimodal projector   | `models/mmproj-Qwen3-ASR-0.6B-Q8_0.gguf` |
-| `YZMA_LIB`     | Directory with llama.cpp .so  | `llamacpp` |
+| `MODEL_PATH`   | Path to Qwen3-ASR GGUF model  | `/opt/go-asr-bot/models/Qwen3-ASR-0.6B-Q8_0.gguf/Qwen3-ASR-0.6B-Q8_0.gguf` |
+| `MMPROJ_PATH`  | Path to multimodal projector   | `/opt/go-asr-bot/models/Qwen3-ASR-0.6B-Q8_0.gguf/mmproj-Qwen3-ASR-0.6B-Q8_0.gguf` |
+| `YZMA_LIB`     | Directory with llama.cpp .so  | `/opt/go-asr-bot/llamacpp` |
 
 ### CrispASR backend
 
 | Variable              | Description                  | Default |
 | --------------------- | ---------------------------- | ------- |
-| `CRISPASR_MODEL_PATH` | Path to any CrispASR GGUF    | `/opt/go-asr-bot/models/parakeet-tdt-0.6b-v3.gguf` |
+| `CRISPASR_MODEL_PATH` | Path to any CrispASR GGUF    | `/opt/go-asr-bot/models/parakeet-tdt-0.6b-v3.gguf/parakeet-tdt-0.6b-v3.gguf` |
 | `CRISPASR_THREADS`    | CPU threads                  | `4` |
 
 Configuration is loaded via environment variables with optional `.env` file support.
 
+## Pull models
+
+Model downloads use direct HTTP with a live progress bar:
+
+```bash
+# yzma models (Qwen3-ASR)
+go run . pull --model qwen3-asr-0.6b-q8_0
+go run . pull --model qwen3-asr-1.7b-q8_0
+
+# CrispASR models (use with ASR_BACKEND=crispasr)
+go run . pull --model cohere-transcribe-q8_0
+go run . pull --model cohere-transcribe-q4_k
+go run . pull --model cohere-transcribe-f16
+
+# List downloaded models
+go run . list
+
+# llama.cpp libraries (for yzma backend)
+go run . pull
+```
+
+## Transcribe a single file
+
+```bash
+go run . run audio.wav --model qwen3-asr-0.6b-q8_0
+```
+
 ## Project structure
 
 ```
-main.go              # entry point
-cmd/                 # cobra commands (root, pull)
+main.go              # entry point, graceful shutdown
+cmd/                 # cobra commands (root, pull, list, run)
 config/config.go     # env-based config
 internal/asr/        # Engine interface + backends (yzma, crispasr)
 internal/bot/bot.go  # bot struct, long-polling updates loop

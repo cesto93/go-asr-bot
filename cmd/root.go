@@ -4,7 +4,6 @@ import (
 	"log"
 	"os"
 	"os/signal"
-	"path/filepath"
 	"syscall"
 
 	"github.com/cesto93/go-asr-bot/config"
@@ -40,13 +39,14 @@ var rootCmd = &cobra.Command{
 				log.Fatalf("unknown model %q (available: qwen3-asr-0.6b-q8_0, qwen3-asr-0.6b-bf16, qwen3-asr-1.7b-q8_0, qwen3-asr-1.7b-bf16, cohere-transcribe-f16, cohere-transcribe-q8_0, cohere-transcribe-q4_k)", flagModel)
 			}
 
-			modelFile := filepath.Join(modelsDir, v.modelFile, v.modelFile)
 			switch cfg.ASRBackend {
 			case "yzma":
-				cfg.ModelPath = modelFile
-				cfg.MMProjPath = filepath.Join(modelsDir, v.modelFile, v.mmprojFile)
+				cfg.ModelPath = resolveModelPath(v, v.modelFile)
+				if v.mmprojFile != "" {
+					cfg.MMProjPath = resolveModelPath(v, v.mmprojFile)
+				}
 			case "crispasr":
-				cfg.CrispasrModelPath = modelFile
+				cfg.CrispasrModelPath = resolveModelPath(v, v.modelFile)
 			}
 		}
 		if cfg.TelegramToken == "" {

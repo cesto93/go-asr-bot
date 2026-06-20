@@ -2,13 +2,46 @@ package cmd
 
 import (
 	"fmt"
+	"io"
+	"net/http"
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 
 	"github.com/hybridgroup/yzma/pkg/download"
 	"github.com/spf13/cobra"
 )
+
+type progressReader struct {
+	r        io.Reader
+	total    int64
+	current  int64
+	label    string
+	lastPct  int
+	barWidth int
+}
+
+func (pr *progressReader) Read(p []byte) (int, error) {
+	n, err := pr.r.Read(p)
+	pr.current += int64(n)
+	pct := int(pr.current * 100 / pr.total)
+	if pct != pr.lastPct {
+		pr.lastPct = pct
+		pr.print()
+	}
+	return n, err
+}
+
+func (pr *progressReader) print() {
+	cur := humanSize(pr.current)
+	tot := humanSize(pr.total)
+	filled := pr.barWidth * pr.lastPct / 100
+	bar := strings.Repeat("=", filled) + ">" + strings.Repeat(" ", pr.barWidth-filled-1)
+	fmt.Fprintf(os.Stderr, "\r  %s [%s] %3d%% (%s/%s)", pr.label, bar, pr.lastPct, cur, tot)
+}
+
+
 
 var (
 	pullLibPath     string
@@ -58,6 +91,14 @@ var modelVariants = map[string]modelVariant{
 		modelFile:  "cohere-transcribe-q4_k.gguf",
 		baseURL:    "https://huggingface.co/cstr/cohere-transcribe-03-2026-GGUF/resolve/main",
 	},
+}
+
+func resolveModelPath(v modelVariant, filename string) string {
+	path := filepath.Join(modelsDir, v.modelFile, filename)
+	if fi, err := os.Stat(path); err == nil && fi.IsDir() {
+		path = filepath.Join(path, filename)
+	}
+	return path
 }
 
 var pullCmd = &cobra.Command{
@@ -132,22 +173,49 @@ func downloadModel(variant, destDir string, upgrade bool) error {
 		destPath := filepath.Join(modelDir, f.name)
 		if !upgrade {
 			if _, err := os.Stat(destPath); err == nil {
-				fmt.Println(f.name, "already exists at", destPath)
+				fmt.Fprintf(os.Stderr, "  %s already exists\n", f.name)
 				continue
 			}
 		}
-		fmt.Println("downloading", f.name, "...")
 		if err := downloadFile(f.url, destPath); err != nil {
 			return fmt.Errorf("downloading %s: %w", f.name, err)
 		}
-		fmt.Println("downloaded", f.name)
 	}
 
 	return nil
 }
 
 func downloadFile(url, dest string) error {
-	return download.GetModel(url, dest)
+	out, err := os.Create(dest)
+	if err != nil {
+		return err
+	}
+	defer out.Close()
+
+	resp, err := http.Get(url)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("bad status: %s", resp.Status)
+	}
+
+	label := filepath.Base(dest)
+	r := io.Reader(resp.Body)
+	if total := resp.ContentLength; total > 0 {
+		r = &progressReader{
+			r:        resp.Body,
+			total:    total,
+			label:    label,
+			barWidth: 30,
+		}
+		defer fmt.Fprintln(os.Stderr)
+	}
+
+	_, err = io.Copy(out, r)
+	return err
 }
 
 func init() {
