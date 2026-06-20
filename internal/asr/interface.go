@@ -6,4 +6,5 @@ type Engine interface {
 	Transcribe(pcm []float32) (string, error)
 	TranscribeLang(pcm []float32, lang string) (string, error)
 	SampleRate() int
+	SetLanguage(lang string)
 }

@@ -3,6 +3,7 @@ package config
 import (
 	"os"
 
+	"github.com/fsnotify/fsnotify"
 	"github.com/joho/godotenv"
 	"github.com/spf13/viper"
 )
@@ -71,4 +72,14 @@ func Save(cfg *Config) error {
 	os.MkdirAll("/opt/go-asr", 0755)
 
 	return v.WriteConfig()
+}
+
+func Watch(callback func(*Config)) {
+	v := viper.New()
+	v.SetConfigFile(ConfigPath)
+	v.SetConfigType("yaml")
+	v.WatchConfig()
+	v.OnConfigChange(func(_ fsnotify.Event) {
+		callback(Load())
+	})
 }

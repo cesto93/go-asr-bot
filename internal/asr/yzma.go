@@ -167,6 +167,10 @@ func (e *yzmaEngine) TranscribeLang(pcm []float32, lang string) (string, error) 
 	return result, nil
 }
 
+func (e *yzmaEngine) SetLanguage(lang string) {
+	e.language = lang
+}
+
 func (e *yzmaEngine) SampleRate() int {
 	return e.sampleRate
 }

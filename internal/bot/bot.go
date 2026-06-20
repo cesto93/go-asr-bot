@@ -12,7 +12,7 @@ import (
 type Bot struct {
 	api              *tgbotapi.BotAPI
 	handlers         *handlers.Handler
-	asr              asr.Engine
+	engine           asr.Engine
 	authorizedUserID int64
 }
 
@@ -33,11 +33,28 @@ func New(cfg *config.Config, modelPath, mmprojPath, backend string) (*Bot, error
 	return &Bot{
 		api:              api,
 		handlers:         handlers.New(api, asrEngine),
+		engine:           asrEngine,
 		authorizedUserID: cfg.UserID,
 	}, nil
 }
 
+func (b *Bot) Reload() {
+	cfg := config.Load()
+	log.Printf("Reloading config from %s", config.ConfigPath)
+
+	if cfg.Language != "" {
+		b.engine.SetLanguage(cfg.Language)
+		log.Printf("Updated language to %q", cfg.Language)
+	}
+
+	b.authorizedUserID = cfg.UserID
+}
+
 func (b *Bot) Run() error {
+	config.Watch(func(cfg *config.Config) {
+		b.Reload()
+	})
+
 	u := tgbotapi.NewUpdate(0)
 	u.Timeout = 60
 

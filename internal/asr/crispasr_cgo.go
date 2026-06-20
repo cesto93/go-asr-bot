@@ -76,6 +76,15 @@ func (e *crispasrEngine) Close() {
 	}
 }
 
+func (e *crispasrEngine) SetLanguage(lang string) {
+	e.language = lang
+	if e.session != nil {
+		clang := C.CString(lang)
+		C.crispasr_session_set_source_language(e.session, clang)
+		C.free(unsafe.Pointer(clang))
+	}
+}
+
 func (e *crispasrEngine) SampleRate() int {
 	return 16000
 }

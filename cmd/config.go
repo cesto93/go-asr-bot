@@ -52,7 +52,14 @@ With --set-default-model or --set-language, update the config file.`,
 				fmt.Fprintf(os.Stderr, "error saving config: %v\n", err)
 				os.Exit(1)
 			}
-			fmt.Printf("Saved config to %s\n\n", config.ConfigPath)
+			fmt.Printf("Saved config to %s\n", config.ConfigPath)
+			if configSetLang != "" {
+				fmt.Println("Language will take effect immediately (auto-detected via fsnotify)")
+			}
+			if configSetModel != "" {
+				fmt.Println("Default model change requires a restart")
+			}
+			fmt.Println()
 		}
 
 		w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
