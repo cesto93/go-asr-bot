@@ -19,7 +19,7 @@ var (
 )
 
 func init() {
-	rootCmd.Flags().StringVar(&flagModel, "model", "", "ASR model name (one of: qwen3-asr-0.6b-q8_0, qwen3-asr-0.6b-bf16, qwen3-asr-1.7b-q8_0, qwen3-asr-1.7b-bf16, cohere-transcribe-f16, cohere-transcribe-q8_0, cohere-transcribe-q4_k)")
+	rootCmd.Flags().StringVar(&flagModel, "model", "", "ASR model name (one of: qwen3-asr-0.6b-q8_0, qwen3-asr-0.6b-bf16, qwen3-asr-1.7b-q8_0, qwen3-asr-1.7b-bf16, cohere-transcribe-f16, cohere-transcribe-q8_0, cohere-transcribe-q4_k, parakeet-tdt-0.6b-v3, parakeet-tdt-0.6b-v3-q8_0, parakeet-tdt-0.6b-v3-q5_0, parakeet-tdt-0.6b-v3-q4_k)")
 	rootCmd.Flags().StringVar(&flagLang, "lang", "", "Source language (ISO 639-1, e.g. en, fr, de)")
 }
 
@@ -36,7 +36,7 @@ var rootCmd = &cobra.Command{
 		if flagModel != "" {
 			v, ok := modelVariants[flagModel]
 			if !ok {
-				log.Fatalf("unknown model %q (available: qwen3-asr-0.6b-q8_0, qwen3-asr-0.6b-bf16, qwen3-asr-1.7b-q8_0, qwen3-asr-1.7b-bf16, cohere-transcribe-f16, cohere-transcribe-q8_0, cohere-transcribe-q4_k)", flagModel)
+				log.Fatalf("unknown model %q (available: qwen3-asr-0.6b-q8_0, qwen3-asr-0.6b-bf16, qwen3-asr-1.7b-q8_0, qwen3-asr-1.7b-bf16, cohere-transcribe-f16, cohere-transcribe-q8_0, cohere-transcribe-q4_k, parakeet-tdt-0.6b-v3, parakeet-tdt-0.6b-v3-q8_0, parakeet-tdt-0.6b-v3-q5_0, parakeet-tdt-0.6b-v3-q4_k)", flagModel)
 			}
 
 			cfg.ASRBackend = v.backend

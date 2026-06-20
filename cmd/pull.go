@@ -107,6 +107,26 @@ var modelVariants = map[string]modelVariant{
 		baseURL:    "https://huggingface.co/cstr/cohere-transcribe-03-2026-GGUF/resolve/main",
 		backend:    "crispasr",
 	},
+	"parakeet-tdt-0.6b-v3": {
+		modelFile: "parakeet-tdt-0.6b-v3.gguf",
+		baseURL:   "https://huggingface.co/cstr/parakeet-tdt-0.6b-v3-GGUF/resolve/main",
+		backend:   "crispasr",
+	},
+	"parakeet-tdt-0.6b-v3-q8_0": {
+		modelFile: "parakeet-tdt-0.6b-v3-q8_0.gguf",
+		baseURL:   "https://huggingface.co/cstr/parakeet-tdt-0.6b-v3-GGUF/resolve/main",
+		backend:   "crispasr",
+	},
+	"parakeet-tdt-0.6b-v3-q5_0": {
+		modelFile: "parakeet-tdt-0.6b-v3-q5_0.gguf",
+		baseURL:   "https://huggingface.co/cstr/parakeet-tdt-0.6b-v3-GGUF/resolve/main",
+		backend:   "crispasr",
+	},
+	"parakeet-tdt-0.6b-v3-q4_k": {
+		modelFile: "parakeet-tdt-0.6b-v3-q4_k.gguf",
+		baseURL:   "https://huggingface.co/cstr/parakeet-tdt-0.6b-v3-GGUF/resolve/main",
+		backend:   "crispasr",
+	},
 }
 
 func resolveModelPath(v modelVariant, filename string) string {
@@ -162,7 +182,7 @@ var pullCmd = &cobra.Command{
 func downloadModel(variant, destDir string, upgrade bool) error {
 	v, ok := modelVariants[variant]
 	if !ok {
-		return fmt.Errorf("unknown model variant %q (available: qwen3-asr-0.6b-q8_0, qwen3-asr-0.6b-bf16, qwen3-asr-1.7b-q8_0, qwen3-asr-1.7b-bf16, cohere-transcribe-f16, cohere-transcribe-q8_0, cohere-transcribe-q4_k)", variant)
+		return fmt.Errorf("unknown model variant %q (available: qwen3-asr-0.6b-q8_0, qwen3-asr-0.6b-bf16, qwen3-asr-1.7b-q8_0, qwen3-asr-1.7b-bf16, cohere-transcribe-f16, cohere-transcribe-q8_0, cohere-transcribe-q4_k, parakeet-tdt-0.6b-v3, parakeet-tdt-0.6b-v3-q8_0, parakeet-tdt-0.6b-v3-q5_0, parakeet-tdt-0.6b-v3-q4_k)", variant)
 	}
 
 	modelDir := filepath.Join(destDir, v.modelFile)
@@ -242,7 +262,7 @@ func init() {
 	pullCmd.Flags().StringVar(&pullProcessor, "processor", "", "processor type: cpu, cuda, vulkan, rocm, metal (auto-detected if empty)")
 	pullCmd.Flags().StringVar(&pullVersion, "version", "latest", "llama.cpp version to download (e.g. b1234)")
 	pullCmd.Flags().BoolVar(&pullUpgrade, "upgrade", false, "force re-download even if already installed")
-	pullCmd.Flags().StringVar(&pullModel, "model", "", "ASR model variant to download (qwen3-asr-0.6b-q8_0, qwen3-asr-0.6b-bf16, qwen3-asr-1.7b-q8_0, qwen3-asr-1.7b-bf16, cohere-transcribe-f16, cohere-transcribe-q8_0, cohere-transcribe-q4_k)")
+	pullCmd.Flags().StringVar(&pullModel, "model", "", "ASR model variant to download (qwen3-asr-0.6b-q8_0, qwen3-asr-0.6b-bf16, qwen3-asr-1.7b-q8_0, qwen3-asr-1.7b-bf16, cohere-transcribe-f16, cohere-transcribe-q8_0, cohere-transcribe-q4_k, parakeet-tdt-0.6b-v3, parakeet-tdt-0.6b-v3-q8_0, parakeet-tdt-0.6b-v3-q5_0, parakeet-tdt-0.6b-v3-q4_k)")
 	pullCmd.Flags().StringVar(&pullModelPath, "model-path", pullModelPath, "destination directory for model files")
 	rootCmd.AddCommand(pullCmd)
 }

@@ -14,6 +14,9 @@ TELEGRAM_BOT_TOKEN=your_token go run .
 
 # CrispASR (requires building libcrispasr.so in lib/crispasr/)
 CGO_ENABLED=1 ASR_BACKEND=crispasr go run .
+
+# Or pick a model — backend is auto-detected from the variant
+CGO_ENABLED=1 go run . --model parakeet-tdt-0.6b-v3-q4_k
 ```
 
 ## Configuration
@@ -37,7 +40,7 @@ CGO_ENABLED=1 ASR_BACKEND=crispasr go run .
 
 | Variable              | Description                  | Default |
 | --------------------- | ---------------------------- | ------- |
-| `CRISPASR_MODEL_PATH` | Path to any CrispASR GGUF    | `/opt/go-asr-bot/models/parakeet-tdt-0.6b-v3.gguf/parakeet-tdt-0.6b-v3.gguf` |
+| `CRISPASR_MODEL_PATH` | Path to any CrispASR GGUF    | `/opt/go-asr-bot/models/parakeet-tdt-0.6b-v3-q4_k.gguf/parakeet-tdt-0.6b-v3-q4_k.gguf` |
 | `CRISPASR_THREADS`    | CPU threads                  | `4` |
 
 ## Pull models
@@ -49,10 +52,14 @@ Model downloads use direct HTTP (not yzma's go-getter), with a live progress bar
 go run . pull --model qwen3-asr-0.6b-q8_0
 go run . pull --model qwen3-asr-1.7b-q8_0
 
-# CrispASR models (use with ASR_BACKEND=crispasr)
+# CrispASR models (backend auto-detected from variant name)
 go run . pull --model cohere-transcribe-q8_0
 go run . pull --model cohere-transcribe-q4_k
 go run . pull --model cohere-transcribe-f16
+go run . pull --model parakeet-tdt-0.6b-v3-q4_k
+go run . pull --model parakeet-tdt-0.6b-v3-q8_0
+go run . pull --model parakeet-tdt-0.6b-v3-q5_0
+go run . pull --model parakeet-tdt-0.6b-v3
 
 # List downloaded models
 go run . list
@@ -94,8 +101,16 @@ Each model variant lives in its own subdirectory named after the model `.gguf` f
 │   └── mmproj-Qwen3-ASR-0.6B-Q8_0.gguf
 ├── cohere-transcribe-q8_0.gguf/
 │   └── cohere-transcribe-q8_0.gguf
-└── cohere-transcribe-q4_k.gguf/
-    └── cohere-transcribe-q4_k.gguf
+├── cohere-transcribe-q4_k.gguf/
+│   └── cohere-transcribe-q4_k.gguf
+├── parakeet-tdt-0.6b-v3-q4_k.gguf/
+│   └── parakeet-tdt-0.6b-v3-q4_k.gguf
+├── parakeet-tdt-0.6b-v3-q8_0.gguf/
+│   └── parakeet-tdt-0.6b-v3-q8_0.gguf
+├── parakeet-tdt-0.6b-v3-q5_0.gguf/
+│   └── parakeet-tdt-0.6b-v3-q5_0.gguf
+└── parakeet-tdt-0.6b-v3.gguf/
+    └── parakeet-tdt-0.6b-v3.gguf
 ```
 
 ## Notes
