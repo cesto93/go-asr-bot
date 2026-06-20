@@ -11,12 +11,22 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var listModelPath string
+var (
+	listModelPath string
+	listAvailable bool
+)
 
 var listCmd = &cobra.Command{
 	Use:   "list",
-	Short: "List downloaded ASR models and their backends",
+	Short: "List ASR models",
+	Long: `List downloaded ASR models and their backends.
+
+With --available, show models available for download instead.`,
 	Run: func(cmd *cobra.Command, args []string) {
+		if listAvailable {
+			listAvailableModels()
+			return
+		}
 		if err := listModels(listModelPath); err != nil {
 			fmt.Println("error:", err.Error())
 			os.Exit(1)
@@ -120,6 +130,29 @@ func listModels(dir string) error {
 	return nil
 }
 
+func listAvailableModels() {
+	names := make([]string, 0, len(modelVariants))
+	for k := range modelVariants {
+		names = append(names, k)
+	}
+	sort.Strings(names)
+
+	fmt.Println("Available models for download:\n")
+	w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
+	fmt.Fprintln(w, "Backend\tVariant\tFiles")
+	fmt.Fprintln(w, "-------\t-------\t-----")
+
+	for _, name := range names {
+		v := modelVariants[name]
+		files := v.modelFile
+		if v.mmprojFile != "" {
+			files += ", " + v.mmprojFile
+		}
+		fmt.Fprintf(w, "%s\t%s\t%s\n", v.backend, name, files)
+	}
+	w.Flush()
+}
+
 func findGGUF(dir string) (models, mmprojs []string) {
 	entries, err := os.ReadDir(dir)
 	if err != nil {
@@ -168,5 +201,6 @@ func init() {
 	listModelPath = "/opt/go-asr-bot/models"
 
 	listCmd.Flags().StringVar(&listModelPath, "model-path", listModelPath, "directory to scan for models")
+	listCmd.Flags().BoolVar(&listAvailable, "available", false, "show models available for download instead of installed ones")
 	rootCmd.AddCommand(listCmd)
 }
