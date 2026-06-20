@@ -34,7 +34,7 @@ if command -v cmake >/dev/null 2>&1 && command -v gcc >/dev/null 2>&1; then
 		echo "Building CrispASR C library..."
 		cmake -S "${REPO_DIR}/lib/crispasr" -B "${REPO_DIR}/lib/crispasr/build" \
 			-DBUILD_SHARED_LIBS=ON -DCMAKE_BUILD_TYPE=Release
-		cmake --build "${REPO_DIR}/lib/crispasr/build" --target crispasr -j"$(nproc)"
+		cmake --build "${REPO_DIR}/lib/crispasr/build" --target crispasr-lib -j"$(nproc)"
 		CGO_ENABLED=1
 	fi
 else
