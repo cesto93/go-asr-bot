@@ -61,13 +61,10 @@ USER_ID=0
 # Language hint (ISO 639-1, e.g. en, fr, de)
 ASR_LANGUAGE=
 
-# yzma backend (Qwen3-ASR)
-MODEL_PATH=${INSTALL_DIR}/models/Qwen3-ASR-0.6B-Q8_0.gguf/Qwen3-ASR-0.6B-Q8_0.gguf
-MMPROJ_PATH=${INSTALL_DIR}/models/Qwen3-ASR-0.6B-Q8_0.gguf/mmproj-Qwen3-ASR-0.6B-Q8_0.gguf
-YZMA_LIB=${INSTALL_DIR}/llamacpp
+# Default model variant (inferred from --model flag or this value)
+# ASR_DEFAULT_MODEL=qwen3-asr-0.6b-q8_0
 
-# CrispASR backend (requires CGO and libcrispasr.so)
-# CRISPASR_MODEL_PATH=${INSTALL_DIR}/models/parakeet-tdt-0.6b-v3-q4_k.gguf/parakeet-tdt-0.6b-v3-q4_k.gguf
+# CPU threads for CrispASR (only used with crispasr models)
 # CRISPASR_THREADS=4
 EOF
 	echo ">>> Please edit ${INSTALL_DIR}/.env with your configuration"
@@ -126,4 +123,4 @@ echo "Service commands:"
 echo "  systemctl status ${SERVICE_NAME}"
 echo "  journalctl -u ${SERVICE_NAME} -f"
 echo ""
-echo "To switch to the CrispASR backend, set ASR_BACKEND=crispasr in ${INSTALL_DIR}/.env"
+echo "To use the CrispASR backend, pass --model <crispasr-variant> or set ASR_DEFAULT_MODEL in ${INSTALL_DIR}/.env"
