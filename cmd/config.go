@@ -11,8 +11,10 @@ import (
 )
 
 var (
-	configSetModel string
-	configSetLang  string
+	configSetModel           string
+	configSetLang            string
+	configSetUserID          int64
+	configSetCrispasrThreads int
 )
 
 var configCmd = &cobra.Command{
@@ -20,7 +22,7 @@ var configCmd = &cobra.Command{
 	Short: "Display or modify configuration",
 	Long: `Display current configuration from config file, environment variables, and defaults.
 
-With --set-default-model or --set-language, update the config file.`,
+With --set-default-model, --set-language, --set-user-id, or --set-crispasr-threads, update the config file.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		cfg := config.Load()
 		changed := false
@@ -47,6 +49,16 @@ With --set-default-model or --set-language, update the config file.`,
 			changed = true
 		}
 
+		if cmd.Flags().Changed("set-user-id") {
+			cfg.UserID = configSetUserID
+			changed = true
+		}
+
+		if cmd.Flags().Changed("set-crispasr-threads") {
+			cfg.CrispasrThreads = configSetCrispasrThreads
+			changed = true
+		}
+
 		if changed {
 			if err := config.Save(cfg); err != nil {
 				fmt.Fprintf(os.Stderr, "error saving config: %v\n", err)
@@ -58,6 +70,12 @@ With --set-default-model or --set-language, update the config file.`,
 			}
 			if configSetModel != "" {
 				fmt.Println("Default model change requires a restart")
+			}
+			if cmd.Flags().Changed("set-user-id") {
+				fmt.Println("UserID restriction will take effect immediately (auto-detected via fsnotify)")
+			}
+			if cmd.Flags().Changed("set-crispasr-threads") {
+				fmt.Println("CrispasrThreads change requires a restart")
 			}
 			fmt.Println()
 		}
@@ -86,5 +104,7 @@ func maskToken(token string) string {
 func init() {
 	configCmd.Flags().StringVar(&configSetModel, "set-default-model", "", "Set default ASR model variant in config file")
 	configCmd.Flags().StringVar(&configSetLang, "set-language", "", "Set source language (ISO 639-1) in config file")
+	configCmd.Flags().Int64Var(&configSetUserID, "set-user-id", 0, "Restrict bot to a single Telegram user ID (0 = allow all)")
+	configCmd.Flags().IntVar(&configSetCrispasrThreads, "set-crispasr-threads", 0, "Set CPU threads for CrispASR backend")
 	rootCmd.AddCommand(configCmd)
 }
