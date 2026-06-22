@@ -8,6 +8,7 @@ import (
 	"strings"
 	"text/tabwriter"
 
+	"github.com/cesto93/go-asr-bot/config"
 	"github.com/spf13/cobra"
 )
 
@@ -55,6 +56,9 @@ func humanSize(bytes int64) string {
 }
 
 func listModels(dir string) error {
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		return fmt.Errorf("create directory %s: %w", dir, err)
+	}
 	entries, err := os.ReadDir(dir)
 	if err != nil {
 		return fmt.Errorf("read directory %s: %w", dir, err)
@@ -198,7 +202,7 @@ func determineBackend(name string) string {
 }
 
 func init() {
-	listModelPath = "/opt/go-asr-bot/models"
+	listModelPath = config.ModelsDir()
 
 	listCmd.Flags().StringVar(&listModelPath, "model-path", listModelPath, "directory to scan for models")
 	listCmd.Flags().BoolVar(&listAvailable, "available", false, "show models available for download instead of installed ones")

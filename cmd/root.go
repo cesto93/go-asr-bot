@@ -11,8 +11,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-const modelsDir = "/opt/go-asr-bot/models"
-
 var (
 	flagModel string
 	flagLang  string

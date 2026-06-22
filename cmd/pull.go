@@ -9,6 +9,7 @@ import (
 	"runtime"
 	"strings"
 
+	"github.com/cesto93/go-asr-bot/config"
 	"github.com/hybridgroup/yzma/pkg/download"
 	"github.com/spf13/cobra"
 )
@@ -130,7 +131,7 @@ var modelVariants = map[string]modelVariant{
 }
 
 func resolveModelPath(v modelVariant, filename string) string {
-	path := filepath.Join(modelsDir, v.modelFile, filename)
+	path := filepath.Join(config.ModelsDir(), v.modelFile, filename)
 	if fi, err := os.Stat(path); err == nil && fi.IsDir() {
 		path = filepath.Join(path, filename)
 	}
@@ -256,7 +257,7 @@ func downloadFile(url, dest string) error {
 
 func init() {
 	pullLibPath = "/opt/go-asr-bot/llamacpp"
-	pullModelPath = "/opt/go-asr-bot/models"
+	pullModelPath = config.ModelsDir()
 
 	pullCmd.Flags().StringVar(&pullLibPath, "lib-path", pullLibPath, "destination directory for llama.cpp libraries")
 	pullCmd.Flags().StringVar(&pullProcessor, "processor", "", "processor type: cpu, cuda, vulkan, rocm, metal (auto-detected if empty)")

@@ -13,6 +13,13 @@ const (
 	ConfigPath     = "/opt/go-asr/config.yaml"
 )
 
+func ModelsDir() string {
+	if d := os.Getenv("MODELS_DIR"); d != "" {
+		return d
+	}
+	return "/opt/go-asr-bot/models"
+}
+
 type Config struct {
 	TelegramToken string
 	Debug         bool
@@ -25,6 +32,7 @@ type Config struct {
 	DefaultModel string
 
 	CrispasrThreads int
+	ModelsDir       string
 }
 
 func Load() *Config {
@@ -55,6 +63,7 @@ func Load() *Config {
 		Language:        v.GetString("language"),
 		DefaultModel:    v.GetString("default_model"),
 		CrispasrThreads: v.GetInt("crispasr_threads"),
+		ModelsDir:       ModelsDir(),
 	}
 }
 

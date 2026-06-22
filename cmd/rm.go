@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"sort"
 
+	"github.com/cesto93/go-asr-bot/config"
 	"github.com/spf13/cobra"
 )
 
@@ -62,7 +63,7 @@ Use "go-asr-bot list" to see available models, or
 }
 
 func init() {
-	rmModelPath = "/opt/go-asr-bot/models"
+	rmModelPath = config.ModelsDir()
 
 	rmCmd.Flags().StringVar(&rmModelPath, "model-path", rmModelPath, "directory where models are stored")
 	rootCmd.AddCommand(rmCmd)
