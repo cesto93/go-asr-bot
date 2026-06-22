@@ -15,6 +15,7 @@ var (
 	configSetLang            string
 	configSetUserID          int64
 	configSetCrispasrThreads int
+	configSetToken           string
 )
 
 var configCmd = &cobra.Command{
@@ -22,7 +23,10 @@ var configCmd = &cobra.Command{
 	Short: "Display or modify configuration",
 	Long: `Display current configuration from config file, environment variables, and defaults.
 
-With --set-default-model, --set-language, --set-user-id, or --set-crispasr-threads, update the config file.`,
+With --set-default-model, --set-language, --set-user-id, --set-crispasr-threads, or --set-telegram-token, update the config file.
+
+NOTE: The Telegram token will be stored in plaintext in the config file.
+The file will be created with restricted permissions (0600).`,
 	Run: func(cmd *cobra.Command, args []string) {
 		cfg := config.Load()
 		changed := false
@@ -59,6 +63,11 @@ With --set-default-model, --set-language, --set-user-id, or --set-crispasr-threa
 			changed = true
 		}
 
+		if cmd.Flags().Changed("set-telegram-token") {
+			cfg.TelegramToken = configSetToken
+			changed = true
+		}
+
 		if changed {
 			if err := config.Save(cfg); err != nil {
 				fmt.Fprintf(os.Stderr, "error saving config: %v\n", err)
@@ -76,6 +85,9 @@ With --set-default-model, --set-language, --set-user-id, or --set-crispasr-threa
 			}
 			if cmd.Flags().Changed("set-crispasr-threads") {
 				fmt.Println("CrispasrThreads change requires a restart")
+			}
+			if cmd.Flags().Changed("set-telegram-token") {
+				fmt.Println("Telegram token change requires a restart")
 			}
 			fmt.Println()
 		}
@@ -106,5 +118,6 @@ func init() {
 	configCmd.Flags().StringVar(&configSetLang, "set-language", "", "Set source language (ISO 639-1) in config file")
 	configCmd.Flags().Int64Var(&configSetUserID, "set-user-id", 0, "Restrict bot to a single Telegram user ID (0 = allow all)")
 	configCmd.Flags().IntVar(&configSetCrispasrThreads, "set-crispasr-threads", 0, "Set CPU threads for CrispASR backend")
+	configCmd.Flags().StringVar(&configSetToken, "set-telegram-token", "", "Set Telegram bot token in config file (stored in plaintext)")
 	rootCmd.AddCommand(configCmd)
 }

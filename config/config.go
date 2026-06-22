@@ -53,11 +53,12 @@ func Load() *Config {
 	v.BindEnv("language", "ASR_LANGUAGE")
 	v.BindEnv("default_model", "ASR_DEFAULT_MODEL")
 	v.BindEnv("crispasr_threads", "CRISPASR_THREADS")
+	v.BindEnv("telegram_token", "TELEGRAM_BOT_TOKEN")
 
 	v.ReadInConfig()
 
 	return &Config{
-		TelegramToken:   os.Getenv("TELEGRAM_BOT_TOKEN"),
+		TelegramToken:   v.GetString("telegram_token"),
 		Debug:           v.GetBool("debug"),
 		UserID:          v.GetInt64("user_id"),
 		Language:        v.GetString("language"),
@@ -77,10 +78,14 @@ func Save(cfg *Config) error {
 	v.Set("language", cfg.Language)
 	v.Set("default_model", cfg.DefaultModel)
 	v.Set("crispasr_threads", cfg.CrispasrThreads)
+	v.Set("telegram_token", cfg.TelegramToken)
 
 	os.MkdirAll("/opt/go-asr", 0775)
 
-	return v.WriteConfig()
+	if err := v.WriteConfig(); err != nil {
+		return err
+	}
+	return os.Chmod(ConfigPath, 0600)
 }
 
 func Watch(callback func(*Config)) {

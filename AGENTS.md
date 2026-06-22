@@ -20,7 +20,7 @@ CGO_ENABLED=1 go run . --model parakeet-tdt-0.6b-v3-q4_k
 
 | Variable             | Description                     | Default |
 | -------------------- | ------------------------------- | ------- |
-| `TELEGRAM_BOT_TOKEN` | Bot token from BotFather       | (required) |
+| `TELEGRAM_BOT_TOKEN` | Bot token from BotFather (env takes precedence over config file) | (required) |
 | `DEBUG`              | Enable debug logging            | `false` |
 | `USER_ID`            | Restrict to single user         | `0` (all) |
 | `ASR_DEFAULT_MODEL`  | Default model variant           | `qwen3-asr-0.6b-q8_0` |
