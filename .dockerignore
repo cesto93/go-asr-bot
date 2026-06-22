@@ -1,0 +1,8 @@
+.git
+.env
+go-asr-bot
+go-asr-bot-crispasr
+lib/crispasr/build
+llamacpp
+models
+data
