@@ -8,7 +8,7 @@ TAG      ?= latest
 all: build
 
 docker-build:
-	$(DOCKER) build --no-cache -t $(IMG):$(TAG) .
+	$(DOCKER) build -t $(IMG):$(TAG) .
 
 docker-up:
 	$(DOCKER) compose up -d
