@@ -8,6 +8,15 @@ SERVICE_NAME="${BIN_NAME}.service"
 SERVICE_PATH="/etc/systemd/system/${SERVICE_NAME}"
 USER_NAME="${BIN_NAME}"
 
+INSTALL_SERVICE=1
+
+while [ $# -gt 0 ]; do
+	case "$1" in
+		--no-service) INSTALL_SERVICE=0; shift ;;
+		*) echo "Unknown option: $1" >&2; exit 1 ;;
+	esac
+done
+
 # Resolve repo root from script location
 REPO_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 
@@ -76,43 +85,42 @@ sudo -u "${USER_NAME}" "${BIN_PATH}" pull --upgrade 2>/dev/null || echo "  (skip
 echo "Pulling default model (qwen3-asr-0.6b-q8_0)..."
 sudo -u "${USER_NAME}" "${BIN_PATH}" pull --model qwen3-asr-0.6b-q8_0 --upgrade 2>/dev/null || echo "  (skipped — run '${BIN_PATH} pull --model qwen3-asr-0.6b-q8_0' manually)"
 
-cat > "${SERVICE_PATH}" <<UNIT
-[Unit]
-Description=Go ASR Bot - Telegram bot for ASR transcription
-After=network-online.target
-Wants=network-online.target
+if [ "${INSTALL_SERVICE}" -eq 1 ]; then
+	SERVICE_FILE="${REPO_DIR}/scripts/${SERVICE_NAME}"
+	if [ ! -f "${SERVICE_FILE}" ]; then
+		echo "Service file not found: ${SERVICE_FILE}" >&2
+		exit 1
+	fi
 
-[Service]
-Type=simple
-User=${USER_NAME}
-Group=${USER_NAME}
-WorkingDirectory=${INSTALL_DIR}
-ExecStart=${BIN_PATH}
-Restart=always
-RestartSec=5
-EnvironmentFile=${INSTALL_DIR}/.env
+	cp "${SERVICE_FILE}" "${SERVICE_PATH}"
 
-[Install]
-WantedBy=multi-user.target
-UNIT
+	echo "Reloading systemd..."
+	systemctl daemon-reload
 
-echo "Reloading systemd..."
-systemctl daemon-reload
-
-echo "Enabling and starting ${SERVICE_NAME}..."
-systemctl enable --now "${SERVICE_NAME}"
+	echo "Enabling and starting ${SERVICE_NAME}..."
+	systemctl enable --now "${SERVICE_NAME}"
+fi
 
 echo ""
 echo "Installation complete."
 echo "  - Binary: ${BIN_PATH}"
 echo "  - Data:   ${INSTALL_DIR}"
 echo "  - Config: ${INSTALL_DIR}/.env"
+if [ "${INSTALL_SERVICE}" -eq 1 ]; then
+	echo "  - Service: ${SERVICE_PATH}"
+fi
 echo ""
 echo "Set your TELEGRAM_BOT_TOKEN in ${INSTALL_DIR}/.env, then:"
-echo "  systemctl restart ${SERVICE_NAME}"
+if [ "${INSTALL_SERVICE}" -eq 1 ]; then
+	echo "  systemctl restart ${SERVICE_NAME}"
+else
+	echo "  ${BIN_PATH}"
+fi
 echo ""
-echo "Service commands:"
-echo "  systemctl status ${SERVICE_NAME}"
-echo "  journalctl -u ${SERVICE_NAME} -f"
-echo ""
+if [ "${INSTALL_SERVICE}" -eq 1 ]; then
+	echo "Service commands:"
+	echo "  systemctl status ${SERVICE_NAME}"
+	echo "  journalctl -u ${SERVICE_NAME} -f"
+	echo ""
+fi
 echo "To use the CrispASR backend, pass --model <crispasr-variant> or set ASR_DEFAULT_MODEL in ${INSTALL_DIR}/.env"
