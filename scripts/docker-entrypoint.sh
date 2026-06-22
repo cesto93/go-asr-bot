@@ -9,8 +9,8 @@ case "$model" in
         ;;
 esac
 
-if [ -n "$ASR_MODEL" ]; then
-    go-asr-bot pull --model "$ASR_MODEL" --model-path /opt/go-asr-bot/models
+if [ -n "$model" ]; then
+    go-asr-bot pull --model "$model" --model-path /opt/go-asr-bot/models
 fi
 
 exec go-asr-bot "$@"

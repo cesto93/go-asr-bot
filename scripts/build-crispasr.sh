@@ -1,25 +1,41 @@
 #!/usr/bin/env sh
 set -eu
 
-command -v cmake >/dev/null 2>&1 || {
-    echo 'cmake not found - skipping CrispASR build'
-    exit 0
-}
+TARBALL="../../lib-imported/libcrispasr-linux-x86_64.tar.gz"
+BUILD_DIR="../../lib/crispasr/build"
 
-LAUNCHER_ARGS=""
-CCACHE="$(command -v ccache 2>/dev/null || true)"
-if [ -n "$CCACHE" ]; then
-    LAUNCHER_ARGS="-DCMAKE_C_COMPILER_LAUNCHER=$CCACHE -DCMAKE_CXX_COMPILER_LAUNCHER=$CCACHE"
+if [ ! -f "$TARBALL" ]; then
+	echo "ERROR: Pre-built CrispASR tarball not found at $TARBALL"
+	echo "Download the artifact and place it in lib-imported/"
+	exit 1
 fi
 
-cmake -S ../../lib/crispasr -B ../../lib/crispasr/build \
-    -DBUILD_SHARED_LIBS=ON \
-    -DCMAKE_BUILD_TYPE=Release \
-    -DCRISPASR_BUILD_TESTS=OFF \
-    -DCRISPASR_BUILD_EXAMPLES=OFF \
-    -DCRISPASR_BUILD_SERVER=OFF \
-    -DCRISPASR_ALL_WARNINGS=OFF \
-    -DGGML_ALL_WARNINGS=OFF \
-    $LAUNCHER_ARGS
+mkdir -p "$BUILD_DIR/src" "$BUILD_DIR/ggml/src"
 
-cmake --build ../../lib/crispasr/build --target crispasr-lib -j"$(nproc)"
+# Extract into a temp directory, then collide everything into src/
+# so the linker only needs one -L/-rpath.
+TMPDIR="$(mktemp -d)"
+tar xzf "$TARBALL" -C "$TMPDIR"
+
+cp -a "$TMPDIR/libcrispasr-linux-x86_64/src/"* "$BUILD_DIR/src/"
+cp -a "$TMPDIR/libcrispasr-linux-x86_64/ggml/src/"* "$BUILD_DIR/ggml/src/"
+
+# Flatten: copy ggml .so files alongside libcrispasr.so so a single
+# -L/-rpath covers all transitive dependencies at link time.
+cp -a "$BUILD_DIR/ggml/src/"*.so* "$BUILD_DIR/src/"
+
+rm -rf "$TMPDIR"
+
+# libcrispasr.so depends on libopenblas.so.0 at link time. If it isn't
+# available on the system, pull the .deb and extract the .so locally.
+if ! ldconfig -p | grep -qF 'libopenblas.so.0'; then
+	OPENBLAS_DIR="$(mktemp -d)"
+	# cache file downloaded from https://packages.ubuntu.com/noble/amd64/libopenblas0-pthread/download
+	wget -q -O "$OPENBLAS_DIR/pkg.deb" \
+		"http://archive.ubuntu.com/ubuntu/pool/universe/o/openblas/libopenblas0-pthread_0.3.26+ds-1ubuntu0.1_amd64.deb"
+	dpkg-deb -x "$OPENBLAS_DIR/pkg.deb" "$OPENBLAS_DIR"
+	cp -a "$OPENBLAS_DIR/usr/lib/x86_64-linux-gnu/openblas-pthread/"libopenblas*.so* "$BUILD_DIR/src/"
+	rm -rf "$OPENBLAS_DIR"
+fi
+
+echo "CrispASR libraries extracted successfully"
