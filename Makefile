@@ -18,10 +18,7 @@ build-crispasr:
 	CGO_ENABLED=1 $(GO) build -o $(BIN_C) .
 
 docker-build:
-	$(DOCKER) build --build-arg BACKEND=yzma -t $(IMG):$(TAG) .
-
-docker-build-crispasr:
-	$(DOCKER) build --build-arg BACKEND=crispasr -t $(IMG)-crispasr:$(TAG) .
+	$(DOCKER) build -t $(IMG):$(TAG) .
 
 docker-up:
 	$(DOCKER) compose up -d

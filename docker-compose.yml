@@ -2,8 +2,6 @@ services:
   bot:
     build:
       context: .
-      args:
-        BACKEND: ${BACKEND:-yzma}
     env_file:
       - .env
     environment:
