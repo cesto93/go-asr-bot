@@ -73,7 +73,7 @@ The file will be created with restricted permissions (0600).`,
 				fmt.Fprintf(os.Stderr, "error saving config: %v\n", err)
 				os.Exit(1)
 			}
-			fmt.Printf("Saved config to %s\n", config.ConfigPath)
+			fmt.Printf("Saved config to %s\n", config.ConfigPath())
 			if configSetLang != "" {
 				fmt.Println("Language will take effect immediately (auto-detected via fsnotify)")
 			}
@@ -101,7 +101,7 @@ The file will be created with restricted permissions (0600).`,
 		fmt.Fprintf(w, "Language\t%s\n", cfg.Language)
 		fmt.Fprintf(w, "DefaultModel\t%s\n", cfg.DefaultModel)
 		fmt.Fprintf(w, "CrispasrThreads\t%d\n", cfg.CrispasrThreads)
-		fmt.Fprintf(w, "ConfigFile\t%s\n", config.ConfigPath)
+		fmt.Fprintf(w, "ConfigFile\t%s\n", config.ConfigPath())
 		w.Flush()
 	},
 }

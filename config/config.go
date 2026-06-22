@@ -2,22 +2,29 @@ package config
 
 import (
 	"os"
+	"path/filepath"
 
 	"github.com/fsnotify/fsnotify"
 	"github.com/joho/godotenv"
 	"github.com/spf13/viper"
 )
 
-const (
-	DefaultYZMALib = "/opt/go-asr-bot/llamacpp"
-	ConfigPath     = "/opt/go-asr/config.yaml"
-)
+const DataDir = "/opt/go-asr-bot"
+
+const DefaultYZMALib = DataDir + "/llamacpp"
+
+func ConfigPath() string {
+	if p := os.Getenv("CONFIG_PATH"); p != "" {
+		return p
+	}
+	return DataDir + "/config.yaml"
+}
 
 func ModelsDir() string {
 	if d := os.Getenv("MODELS_DIR"); d != "" {
 		return d
 	}
-	return "/opt/go-asr-bot/models"
+	return DataDir + "/models"
 }
 
 type Config struct {
@@ -39,7 +46,7 @@ func Load() *Config {
 	godotenv.Load()
 
 	v := viper.New()
-	v.SetConfigFile(ConfigPath)
+	v.SetConfigFile(ConfigPath())
 	v.SetConfigType("yaml")
 
 	v.SetDefault("debug", false)
@@ -70,7 +77,7 @@ func Load() *Config {
 
 func Save(cfg *Config) error {
 	v := viper.New()
-	v.SetConfigFile(ConfigPath)
+	v.SetConfigFile(ConfigPath())
 	v.SetConfigType("yaml")
 
 	v.Set("debug", cfg.Debug)
@@ -80,17 +87,19 @@ func Save(cfg *Config) error {
 	v.Set("crispasr_threads", cfg.CrispasrThreads)
 	v.Set("telegram_token", cfg.TelegramToken)
 
-	os.MkdirAll("/opt/go-asr", 0775)
+	if err := os.MkdirAll(filepath.Dir(ConfigPath()), 0775); err != nil {
+		return err
+	}
 
 	if err := v.WriteConfig(); err != nil {
 		return err
 	}
-	return os.Chmod(ConfigPath, 0600)
+	return os.Chmod(ConfigPath(), 0600)
 }
 
 func Watch(callback func(*Config)) {
 	v := viper.New()
-	v.SetConfigFile(ConfigPath)
+	v.SetConfigFile(ConfigPath())
 	v.SetConfigType("yaml")
 	v.WatchConfig()
 	v.OnConfigChange(func(_ fsnotify.Event) {

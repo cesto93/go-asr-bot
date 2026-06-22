@@ -70,6 +70,16 @@ chmod -R g+rw "${INSTALL_DIR}"
 chmod o+w "${INSTALL_DIR}/models"
 chmod g+s "${INSTALL_DIR}" "${INSTALL_DIR}/models" 2>/dev/null || true
 
+# Grant admin user write access to the data dir so both user and service can
+# write config.yaml. Uses ACL when available, falls back to world-writable.
+if [ -n "${ACCESS_USER}" ] && [ "${ACCESS_USER}" != "root" ]; then
+	if command -v setfacl >/dev/null 2>&1; then
+		setfacl -m u:"${ACCESS_USER}":rwx "${INSTALL_DIR}" 2>/dev/null || chmod o+w "${INSTALL_DIR}"
+	else
+		chmod o+w "${INSTALL_DIR}"
+	fi
+fi
+
 if [ ! -f "${INSTALL_DIR}/.env" ]; then
 	echo "Creating ${INSTALL_DIR}/.env..."
 	cat > "${INSTALL_DIR}/.env" <<EOF

@@ -40,7 +40,7 @@ func New(cfg *config.Config, modelPath, mmprojPath, backend string) (*Bot, error
 
 func (b *Bot) Reload() {
 	cfg := config.Load()
-	log.Printf("Reloading config from %s", config.ConfigPath)
+	log.Printf("Reloading config from %s", config.ConfigPath())
 
 	if cfg.Language != "" {
 		b.engine.SetLanguage(cfg.Language)

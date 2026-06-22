@@ -1,0 +1,22 @@
+services:
+  bot:
+    build:
+      context: .
+      args:
+        BACKEND: ${BACKEND:-yzma}
+    env_file:
+      - .env
+    environment:
+      - ASR_DEFAULT_MODEL=${ASR_DEFAULT_MODEL:-qwen3-asr-0.6b-q8_0}
+      - ASR_LANGUAGE=${ASR_LANGUAGE:-}
+      - DEBUG=${DEBUG:-false}
+      - USER_ID=${USER_ID:-0}
+      - ASR_MODEL=${ASR_MODEL:-}
+    volumes:
+      - asr-models:/opt/go-asr-bot/models
+      - asr-llamacpp:/opt/go-asr-bot/llamacpp
+    restart: unless-stopped
+
+volumes:
+  asr-models:
+  asr-llamacpp:
