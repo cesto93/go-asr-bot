@@ -21,6 +21,8 @@ RUN if [ ! -f lib/crispasr/CMakeLists.txt ]; then \
 RUN rm -rf lib/crispasr/build && go generate ./internal/asr/
 RUN CGO_ENABLED=1 go build -tags cgo -o /go-asr-bot .
 
+FROM build-${BACKEND} AS build-final
+
 FROM debian:bookworm-slim AS runtime-base
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
@@ -33,8 +35,7 @@ COPY --from=build-crispasr /src/lib/crispasr/build/src/libcrispasr* /usr/local/l
 ENV LD_LIBRARY_PATH=/usr/local/lib
 
 FROM runtime-${BACKEND}
-ARG BACKEND
-COPY --from=build-${BACKEND} /go-asr-bot /usr/local/bin/go-asr-bot
+COPY --from=build-final /go-asr-bot /usr/local/bin/go-asr-bot
 COPY scripts/docker-entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 ENTRYPOINT ["/entrypoint.sh"]
