@@ -11,14 +11,14 @@ TAG      ?= latest
 all: build
 
 build:
-	CGO_ENABLED=0 $(GO) build -o $(BIN) .
+	CGO_ENABLED=0 $(GO) build -a -o $(BIN) .
 
 build-crispasr:
 	$(GO) generate ./internal/asr/
-	CGO_ENABLED=1 $(GO) build -o $(BIN_C) .
+	CGO_ENABLED=1 $(GO) build -a -o $(BIN_C) .
 
 docker-build:
-	$(DOCKER) build -t $(IMG):$(TAG) .
+	$(DOCKER) build --no-cache -t $(IMG):$(TAG) .
 
 docker-up:
 	$(DOCKER) compose up -d

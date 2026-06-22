@@ -17,7 +17,7 @@ RUN if [ ! -f lib/crispasr/CMakeLists.txt ]; then \
 
 RUN rm -rf lib/crispasr/build && GIT_ASKPASS=echo go generate ./internal/asr/
 
-RUN CGO_ENABLED=1 go build -o /go-asr-bot .
+RUN go clean -cache && CGO_ENABLED=1 go build -a -o /go-asr-bot .
 
 FROM debian:trixie-slim
 RUN apt-get update && apt-get install -y --no-install-recommends \

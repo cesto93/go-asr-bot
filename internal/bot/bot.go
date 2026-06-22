@@ -50,6 +50,11 @@ func New(cfg *config.Config, modelPath, mmprojPath, modelName, backend string) (
 	}
 
 	b.handlers = handlers.New(api, b.engine, b)
+
+	if err := b.registerCommands(); err != nil {
+		log.Printf("Failed to register commands: %v", err)
+	}
+
 	return b, nil
 }
 
@@ -69,6 +74,11 @@ func NewWithoutASR(cfg *config.Config) (*Bot, error) {
 	}
 
 	b.handlers = handlers.New(api, nil, b)
+
+	if err := b.registerCommands(); err != nil {
+		log.Printf("Failed to register commands: %v", err)
+	}
+
 	return b, nil
 }
 
@@ -148,6 +158,19 @@ func (b *Bot) SetModel(name string) error {
 
 	cfg.DefaultModel = name
 	return config.Save(cfg)
+}
+
+func (b *Bot) registerCommands() error {
+	commands := []tgbotapi.BotCommand{
+		{Command: "start", Description: "Start the bot"},
+		{Command: "help", Description: "Show available commands"},
+		{Command: "list", Description: "List downloaded models"},
+		{Command: "status", Description: "Show current model and language"},
+		{Command: "setmodel", Description: "Change ASR model"},
+		{Command: "setlang", Description: "Set language (ISO 639-1, empty to clear)"},
+	}
+	_, err := b.api.Request(tgbotapi.NewSetMyCommands(commands...))
+	return err
 }
 
 func (b *Bot) Run() error {

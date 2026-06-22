@@ -2,6 +2,9 @@ package handlers
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
+	"sort"
 	"strings"
 
 	"github.com/cesto93/go-asr-bot/config"
@@ -51,7 +54,9 @@ func (h *Handler) handleCommand(msg *tgbotapi.Message) error {
 	case "start":
 		return h.sendText(msg.Chat.ID, "Hello! I'm a Telegram bot. Send me a voice message to transcribe.")
 	case "help":
-		return h.sendText(msg.Chat.ID, "Available commands:\n/start - Start the bot\n/help - Show this help\n/status - Show current model and language\n/setmodel <name> - Change ASR model\n/setlang <code> - Set language (ISO 639-1, empty to clear)\n\nSend a voice message to transcribe it.")
+		return h.sendText(msg.Chat.ID, "Available commands:\n/start - Start the bot\n/help - Show this help\n/list - List downloaded models\n/status - Show current model and language\n/setmodel <name> - Change ASR model\n/setlang <code> - Set language (ISO 639-1, empty to clear)\n\nSend a voice message to transcribe it.")
+	case "list":
+		return h.handleList(msg)
 	case "status":
 		return h.handleStatus(msg)
 	case "setmodel":
@@ -117,10 +122,71 @@ func (h *Handler) handleSetLang(msg *tgbotapi.Message) error {
 	return h.sendText(msg.Chat.ID, fmt.Sprintf("Language set to %s", lang))
 }
 
+func findGGUF(dir string) (models []string) {
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		return nil
+	}
+	for _, e := range entries {
+		path := filepath.Join(dir, e.Name())
+		if e.IsDir() {
+			models = append(models, findGGUF(path)...)
+		} else if strings.HasSuffix(e.Name(), ".gguf") && !strings.HasPrefix(e.Name(), "mmproj-") {
+			models = append(models, path)
+		}
+	}
+	return models
+}
+
+func modelVariantName(filename string) string {
+	for k, v := range config.ModelVariants {
+		if v.ModelFile == filename {
+			return k
+		}
+	}
+	return ""
+}
+
 func (h *Handler) sendText(chatID int64, text string) error {
 	msg := tgbotapi.NewMessage(chatID, text)
 	_, err := h.bot.Send(msg)
 	return err
+}
+
+func (h *Handler) handleList(msg *tgbotapi.Message) error {
+	dir := config.ModelsDir()
+
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		return h.sendText(msg.Chat.ID, fmt.Sprintf("Failed to read models directory: %v", err))
+	}
+
+	var models []string
+	for _, e := range entries {
+		if !e.IsDir() {
+			continue
+		}
+		ggufs := findGGUF(filepath.Join(dir, e.Name()))
+		for _, p := range ggufs {
+			name := modelVariantName(filepath.Base(p))
+			if name != "" {
+				models = append(models, name)
+			}
+		}
+	}
+
+	sort.Strings(models)
+
+	if len(models) == 0 {
+		return h.sendText(msg.Chat.ID, "No downloaded models found.")
+	}
+
+	text := "Downloaded models:\n"
+	for _, m := range models {
+		text += "  • " + m + "\n"
+	}
+
+	return h.sendText(msg.Chat.ID, text)
 }
 
 func (h *Handler) sendTranscribing(chatID int64) error {

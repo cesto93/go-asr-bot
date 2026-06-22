@@ -1,7 +1,6 @@
 services:
   bot:
-    build:
-      context: .
+    image: go-asr-bot:latest
     env_file:
       - .env
     environment:
