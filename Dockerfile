@@ -15,7 +15,7 @@ RUN if [ ! -f lib/crispasr/CMakeLists.txt ]; then \
       git clone --depth 1 https://github.com/CrispStrobe/CrispASR lib/crispasr; \
     fi
 
-RUN rm -rf lib/crispasr/build && go generate ./internal/asr/
+RUN rm -rf lib/crispasr/build && GIT_ASKPASS=echo go generate ./internal/asr/
 
 RUN CGO_ENABLED=1 go build -o /go-asr-bot .
 
