@@ -25,6 +25,31 @@ type Handler struct {
 	server Server
 }
 
+var BotCommands = []tgbotapi.BotCommand{
+	{Command: "start", Description: "Start the bot"},
+	{Command: "help", Description: "Show available commands"},
+	{Command: "list", Description: "List downloaded models"},
+	{Command: "status", Description: "Show current model and language"},
+	{Command: "setmodel", Description: "Change ASR model"},
+	{Command: "setlang", Description: "Set language (ISO 639-1, empty to clear)"},
+}
+
+func HelpText() string {
+	var b strings.Builder
+	b.WriteString("Available commands:\n")
+	for _, cmd := range BotCommands {
+		desc := cmd.Description
+		if cmd.Command == "setmodel" {
+			desc = "<name> - Change ASR model"
+		} else if cmd.Command == "setlang" {
+			desc = "<code> - Set language (ISO 639-1, empty to clear)"
+		}
+		b.WriteString("/" + cmd.Command + " " + desc + "\n")
+	}
+	b.WriteString("\nSend a voice message to transcribe it.")
+	return b.String()
+}
+
 func New(bot *tgbotapi.BotAPI, asr asr.Engine, server Server) *Handler {
 	return &Handler{bot: bot, asr: asr, server: server}
 }
@@ -54,7 +79,7 @@ func (h *Handler) handleCommand(msg *tgbotapi.Message) error {
 	case "start":
 		return h.sendText(msg.Chat.ID, "Hello! I'm a Telegram bot. Send me a voice message to transcribe.")
 	case "help":
-		return h.sendText(msg.Chat.ID, "Available commands:\n/start - Start the bot\n/help - Show this help\n/list - List downloaded models\n/status - Show current model and language\n/setmodel <name> - Change ASR model\n/setlang <code> - Set language (ISO 639-1, empty to clear)\n\nSend a voice message to transcribe it.")
+		return h.sendText(msg.Chat.ID, HelpText())
 	case "list":
 		return h.handleList(msg)
 	case "status":
