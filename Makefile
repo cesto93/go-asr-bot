@@ -23,6 +23,9 @@ docker-build:
 docker-up:
 	$(DOCKER) compose up -d
 
+docker-down:
+	$(DOCKER) compose down
+
 pull:
 	$(GO) run . pull
 
