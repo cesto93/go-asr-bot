@@ -25,9 +25,12 @@ func New(cfg *config.Config, modelPath, mmprojPath, backend string) (*Bot, error
 	api.Debug = cfg.Debug
 	log.Printf("Authorized on account %s", api.Self.UserName)
 
-	asrEngine, err := asr.NewFromConfig(cfg, modelPath, mmprojPath, backend)
-	if err != nil {
-		return nil, err
+	var asrEngine asr.Engine
+	if modelPath != "" {
+		asrEngine, err = asr.NewFromConfig(cfg, modelPath, mmprojPath, backend)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return &Bot{
@@ -38,11 +41,27 @@ func New(cfg *config.Config, modelPath, mmprojPath, backend string) (*Bot, error
 	}, nil
 }
 
+func NewWithoutASR(cfg *config.Config) (*Bot, error) {
+	api, err := tgbotapi.NewBotAPI(cfg.TelegramToken)
+	if err != nil {
+		return nil, err
+	}
+
+	api.Debug = cfg.Debug
+	log.Printf("Authorized on account %s", api.Self.UserName)
+
+	return &Bot{
+		api:              api,
+		handlers:         handlers.New(api, nil),
+		authorizedUserID: cfg.UserID,
+	}, nil
+}
+
 func (b *Bot) Reload() {
 	cfg := config.Load()
 	log.Printf("Reloading config from %s", config.ConfigPath())
 
-	if cfg.Language != "" {
+	if cfg.Language != "" && b.engine != nil {
 		b.engine.SetLanguage(cfg.Language)
 		log.Printf("Updated language to %q", cfg.Language)
 	}

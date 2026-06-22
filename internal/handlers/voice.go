@@ -10,6 +10,10 @@ import (
 )
 
 func (h *Handler) handleVoice(msg *tgbotapi.Message) error {
+	if h.asr == nil {
+		return h.sendText(msg.Chat.ID, "ASR model not available. Please download a model first using `go run . pull --model <name>`.")
+	}
+
 	h.sendTranscribing(msg.Chat.ID)
 
 	tmpDir, err := os.MkdirTemp("", "asr-*")

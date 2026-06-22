@@ -1,9 +1,12 @@
-BIN    := go-asr-bot
-BIN_C  := go-asr-bot-crispasr
-MODEL  ?= qwen3-asr-0.6b-q8_0
-GO     ?= go
+BIN      := go-asr-bot
+BIN_C    := go-asr-bot-crispasr
+MODEL    ?= qwen3-asr-0.6b-q8_0
+GO       ?= go
+DOCKER   ?= docker
+IMG      ?= go-asr-bot
+TAG      ?= latest
 
-.PHONY: all build build-crispasr pull pull-model crispasr-lib clean test install
+.PHONY: all build build-crispasr docker-build docker-build-crispasr docker-up pull pull-model crispasr-lib clean test install
 
 all: build
 
@@ -13,6 +16,15 @@ build:
 build-crispasr:
 	$(GO) generate ./internal/asr/
 	CGO_ENABLED=1 $(GO) build -o $(BIN_C) .
+
+docker-build:
+	$(DOCKER) build --build-arg BACKEND=yzma -t $(IMG):$(TAG) .
+
+docker-build-crispasr:
+	$(DOCKER) build --build-arg BACKEND=crispasr -t $(IMG)-crispasr:$(TAG) .
+
+docker-up:
+	$(DOCKER) compose up -d
 
 pull:
 	$(GO) run . pull

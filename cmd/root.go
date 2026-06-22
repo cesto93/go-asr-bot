@@ -52,17 +52,24 @@ var rootCmd = &cobra.Command{
 		}
 
 		if _, err := os.Stat(modelPath); os.IsNotExist(err) {
-			log.Fatalf("Model file not found at %s", modelPath)
-		}
-		if backend == "yzma" {
+			log.Printf("WARNING: Model file not found at %s — ASR unavailable", modelPath)
+			modelPath = ""
+			mmprojPath = ""
+		} else if backend == "yzma" {
 			if _, err := os.Stat(mmprojPath); os.IsNotExist(err) {
-				log.Fatalf("Multimodal projector file not found at %s", mmprojPath)
+				log.Printf("WARNING: Multimodal projector file not found at %s — ASR unavailable", mmprojPath)
+				modelPath = ""
+				mmprojPath = ""
 			}
 		}
 
 		b, err := bot.New(cfg, modelPath, mmprojPath, backend)
 		if err != nil {
-			log.Fatalf("Failed to create bot: %v", err)
+			log.Printf("WARNING: Failed to create bot: %v — starting without ASR", err)
+			b, err = bot.NewWithoutASR(cfg)
+			if err != nil {
+				log.Fatalf("Failed to create bot even without ASR: %v", err)
+			}
 		}
 
 		go func() {
