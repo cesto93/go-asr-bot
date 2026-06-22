@@ -1,6 +1,3 @@
-BIN      := go-asr-bot
-BIN_C    := go-asr-bot-crispasr
-MODEL    ?= qwen3-asr-0.6b-q8_0
 GO       ?= go
 DOCKER   ?= docker
 IMG      ?= go-asr-bot
@@ -10,13 +7,6 @@ TAG      ?= latest
 
 all: build
 
-build:
-	CGO_ENABLED=0 $(GO) build -a -o $(BIN) .
-
-build-crispasr:
-	$(GO) generate ./internal/asr/
-	CGO_ENABLED=1 $(GO) build -a -o $(BIN_C) .
-
 docker-build:
 	$(DOCKER) build --no-cache -t $(IMG):$(TAG) .
 
@@ -25,18 +15,6 @@ docker-up:
 
 docker-down:
 	$(DOCKER) compose down
-
-pull:
-	$(GO) run . pull
-
-pull-model:
-	$(GO) run . pull --model $(MODEL)
-
-crispasr-lib:
-	$(GO) generate ./internal/asr/
-
-clean:
-	rm -f $(BIN) $(BIN_C)
 
 test:
 	$(GO) test ./...
