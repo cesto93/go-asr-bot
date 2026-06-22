@@ -61,83 +61,6 @@ var (
 	pullModelPath   string
 )
 
-type modelVariant struct {
-	modelFile  string
-	mmprojFile string
-	baseURL    string
-	backend    string
-}
-
-var modelVariants = map[string]modelVariant{
-	"qwen3-asr-0.6b-q8_0": {
-		modelFile:  "Qwen3-ASR-0.6B-Q8_0.gguf",
-		mmprojFile: "mmproj-Qwen3-ASR-0.6B-Q8_0.gguf",
-		baseURL:    "https://huggingface.co/ggml-org/Qwen3-ASR-0.6B-GGUF/resolve/main",
-		backend:    "yzma",
-	},
-	"qwen3-asr-0.6b-bf16": {
-		modelFile:  "Qwen3-ASR-0.6B-bf16.gguf",
-		mmprojFile: "mmproj-Qwen3-ASR-0.6B-bf16.gguf",
-		baseURL:    "https://huggingface.co/ggml-org/Qwen3-ASR-0.6B-GGUF/resolve/main",
-		backend:    "yzma",
-	},
-	"qwen3-asr-1.7b-q8_0": {
-		modelFile:  "Qwen3-ASR-1.7B-Q8_0.gguf",
-		mmprojFile: "mmproj-Qwen3-ASR-1.7B-Q8_0.gguf",
-		baseURL:    "https://huggingface.co/ggml-org/Qwen3-ASR-1.7B-GGUF/resolve/main",
-		backend:    "yzma",
-	},
-	"qwen3-asr-1.7b-bf16": {
-		modelFile:  "Qwen3-ASR-1.7B-bf16.gguf",
-		mmprojFile: "mmproj-Qwen3-ASR-1.7B-bf16.gguf",
-		baseURL:    "https://huggingface.co/ggml-org/Qwen3-ASR-1.7B-GGUF/resolve/main",
-		backend:    "yzma",
-	},
-	"cohere-transcribe-f16": {
-		modelFile:  "cohere-transcribe.gguf",
-		baseURL:    "https://huggingface.co/cstr/cohere-transcribe-03-2026-GGUF/resolve/main",
-		backend:    "crispasr",
-	},
-	"cohere-transcribe-q8_0": {
-		modelFile:  "cohere-transcribe-q8_0.gguf",
-		baseURL:    "https://huggingface.co/cstr/cohere-transcribe-03-2026-GGUF/resolve/main",
-		backend:    "crispasr",
-	},
-	"cohere-transcribe-q4_k": {
-		modelFile:  "cohere-transcribe-q4_k.gguf",
-		baseURL:    "https://huggingface.co/cstr/cohere-transcribe-03-2026-GGUF/resolve/main",
-		backend:    "crispasr",
-	},
-	"parakeet-tdt-0.6b-v3": {
-		modelFile: "parakeet-tdt-0.6b-v3.gguf",
-		baseURL:   "https://huggingface.co/cstr/parakeet-tdt-0.6b-v3-GGUF/resolve/main",
-		backend:   "crispasr",
-	},
-	"parakeet-tdt-0.6b-v3-q8_0": {
-		modelFile: "parakeet-tdt-0.6b-v3-q8_0.gguf",
-		baseURL:   "https://huggingface.co/cstr/parakeet-tdt-0.6b-v3-GGUF/resolve/main",
-		backend:   "crispasr",
-	},
-	"parakeet-tdt-0.6b-v3-q5_0": {
-		modelFile: "parakeet-tdt-0.6b-v3-q5_0.gguf",
-		baseURL:   "https://huggingface.co/cstr/parakeet-tdt-0.6b-v3-GGUF/resolve/main",
-		backend:   "crispasr",
-	},
-	"parakeet-tdt-0.6b-v3-q4_k": {
-		modelFile: "parakeet-tdt-0.6b-v3-q4_k.gguf",
-		baseURL:   "https://huggingface.co/cstr/parakeet-tdt-0.6b-v3-GGUF/resolve/main",
-		backend:   "crispasr",
-	},
-}
-
-func resolveModelPath(v modelVariant, filename string) string {
-	path := filepath.Join(config.ModelsDir(), v.modelFile, filename)
-	if fi, err := os.Stat(path); err == nil && fi.IsDir() {
-		path = filepath.Join(path, filename)
-	}
-	return path
-}
-
 var pullCmd = &cobra.Command{
 	Use:   "pull",
 	Short: "Download llama.cpp libraries and ASR models",
@@ -196,12 +119,12 @@ var pullCmd = &cobra.Command{
 }
 
 func downloadModel(variant, destDir string, upgrade bool) error {
-	v, ok := modelVariants[variant]
+	v, ok := config.ModelVariants[variant]
 	if !ok {
-		return fmt.Errorf("unknown model variant %q (available: qwen3-asr-0.6b-q8_0, qwen3-asr-0.6b-bf16, qwen3-asr-1.7b-q8_0, qwen3-asr-1.7b-bf16, cohere-transcribe-f16, cohere-transcribe-q8_0, cohere-transcribe-q4_k, parakeet-tdt-0.6b-v3, parakeet-tdt-0.6b-v3-q8_0, parakeet-tdt-0.6b-v3-q5_0, parakeet-tdt-0.6b-v3-q4_k)", variant)
+		return fmt.Errorf("unknown model variant %q", variant)
 	}
 
-	modelDir := filepath.Join(destDir, v.modelFile)
+	modelDir := filepath.Join(destDir, v.ModelFile)
 	if err := os.MkdirAll(modelDir, 0775); err != nil {
 		return fmt.Errorf("create directory %s: %w", modelDir, err)
 	}
@@ -213,12 +136,12 @@ func downloadModel(variant, destDir string, upgrade bool) error {
 	files = append(files, struct {
 		name string
 		url  string
-	}{v.modelFile, v.baseURL + "/" + v.modelFile})
-	if v.mmprojFile != "" {
+	}{v.ModelFile, v.BaseURL + "/" + v.ModelFile})
+	if v.MMProjFile != "" {
 		files = append(files, struct {
 			name string
 			url  string
-		}{v.mmprojFile, v.baseURL + "/" + v.mmprojFile})
+		}{v.MMProjFile, v.BaseURL + "/" + v.MMProjFile})
 	}
 
 	for _, f := range files {

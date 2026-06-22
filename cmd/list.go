@@ -135,24 +135,24 @@ func listModels(dir string) error {
 }
 
 func listAvailableModels() {
-	names := make([]string, 0, len(modelVariants))
-	for k := range modelVariants {
+	names := make([]string, 0, len(config.ModelVariants))
+	for k := range config.ModelVariants {
 		names = append(names, k)
 	}
 	sort.Strings(names)
 
-	fmt.Println("Available models for download:\n")
+	fmt.Println("Available models for download:")
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
 	fmt.Fprintln(w, "Backend\tVariant\tFiles")
 	fmt.Fprintln(w, "-------\t-------\t-----")
 
 	for _, name := range names {
-		v := modelVariants[name]
-		files := v.modelFile
-		if v.mmprojFile != "" {
-			files += ", " + v.mmprojFile
+		v := config.ModelVariants[name]
+		files := v.ModelFile
+		if v.MMProjFile != "" {
+			files += ", " + v.MMProjFile
 		}
-		fmt.Fprintf(w, "%s\t%s\t%s\n", v.backend, name, files)
+		fmt.Fprintf(w, "%s\t%s\t%s\n", v.Backend, name, files)
 	}
 	w.Flush()
 }
@@ -181,8 +181,8 @@ func findGGUF(dir string) (models, mmprojs []string) {
 }
 
 func modelVariantName(filename string) string {
-	for k, v := range modelVariants {
-		if v.modelFile == filename {
+	for k, v := range config.ModelVariants {
+		if v.ModelFile == filename {
 			return k
 		}
 	}
@@ -190,9 +190,9 @@ func modelVariantName(filename string) string {
 }
 
 func determineBackend(name string) string {
-	for _, v := range modelVariants {
-		if v.modelFile == name {
-			return v.backend
+	for _, v := range config.ModelVariants {
+		if v.ModelFile == name {
+			return v.Backend
 		}
 	}
 	if strings.Contains(name, "Qwen3-ASR") || strings.Contains(name, "qwen3-asr") {

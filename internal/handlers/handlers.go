@@ -1,17 +1,33 @@
 package handlers
 
 import (
+	"fmt"
+	"strings"
+
+	"github.com/cesto93/go-asr-bot/config"
 	"github.com/cesto93/go-asr-bot/internal/asr"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
-type Handler struct {
-	bot *tgbotapi.BotAPI
-	asr asr.Engine
+type Server interface {
+	SetLanguage(lang string) error
+	SetModel(name string) error
+	CurrentModel() string
+	CurrentLanguage() string
 }
 
-func New(bot *tgbotapi.BotAPI, asr asr.Engine) *Handler {
-	return &Handler{bot: bot, asr: asr}
+type Handler struct {
+	bot    *tgbotapi.BotAPI
+	asr    asr.Engine
+	server Server
+}
+
+func New(bot *tgbotapi.BotAPI, asr asr.Engine, server Server) *Handler {
+	return &Handler{bot: bot, asr: asr, server: server}
+}
+
+func (h *Handler) SetASR(asr asr.Engine) {
+	h.asr = asr
 }
 
 func (h *Handler) HandleMessage(msg *tgbotapi.Message) error {
@@ -35,10 +51,70 @@ func (h *Handler) handleCommand(msg *tgbotapi.Message) error {
 	case "start":
 		return h.sendText(msg.Chat.ID, "Hello! I'm a Telegram bot. Send me a voice message to transcribe.")
 	case "help":
-		return h.sendText(msg.Chat.ID, "Available commands:\n/start - Start the bot\n/help - Show this help\n\nSend a voice message to transcribe it.")
+		return h.sendText(msg.Chat.ID, "Available commands:\n/start - Start the bot\n/help - Show this help\n/status - Show current model and language\n/setmodel <name> - Change ASR model\n/setlang <code> - Set language (ISO 639-1, empty to clear)\n\nSend a voice message to transcribe it.")
+	case "status":
+		return h.handleStatus(msg)
+	case "setmodel":
+		return h.handleSetModel(msg)
+	case "setlang":
+		return h.handleSetLang(msg)
 	default:
 		return h.sendText(msg.Chat.ID, "Unknown command.")
 	}
+}
+
+func (h *Handler) handleStatus(msg *tgbotapi.Message) error {
+	model := h.server.CurrentModel()
+	lang := h.server.CurrentLanguage()
+
+	text := fmt.Sprintf("Model: %s\nLanguage: %s", model, lang)
+	if lang == "" {
+		text = fmt.Sprintf("Model: %s\nLanguage: (not set)", model)
+	}
+	if h.asr == nil {
+		text += "\nASR: unavailable"
+	}
+	return h.sendText(msg.Chat.ID, text)
+}
+
+func (h *Handler) handleSetModel(msg *tgbotapi.Message) error {
+	args := strings.Fields(msg.CommandArguments())
+	if len(args) == 0 {
+		names := make([]string, 0, len(config.ModelVariants))
+		for k := range config.ModelVariants {
+			names = append(names, k)
+		}
+		return h.sendText(msg.Chat.ID, "Usage: /setmodel <name>\nAvailable models: "+strings.Join(names, ", "))
+	}
+
+	name := args[0]
+	if _, ok := config.ModelVariants[name]; !ok {
+		return h.sendText(msg.Chat.ID, "Unknown model. Use /setmodel without arguments to list available models.")
+	}
+
+	if err := h.server.SetModel(name); err != nil {
+		return h.sendText(msg.Chat.ID, fmt.Sprintf("Failed to change model: %v", err))
+	}
+
+	return h.sendText(msg.Chat.ID, fmt.Sprintf("Model changed to %s", name))
+}
+
+func (h *Handler) handleSetLang(msg *tgbotapi.Message) error {
+	args := strings.Fields(msg.CommandArguments())
+
+	var lang string
+	if len(args) > 0 {
+		lang = args[0]
+	}
+
+	if err := h.server.SetLanguage(lang); err != nil {
+		return h.sendText(msg.Chat.ID, fmt.Sprintf("Failed to set language: %v", err))
+	}
+
+	if lang == "" {
+		return h.sendText(msg.Chat.ID, "Language cleared.")
+	}
+	return h.sendText(msg.Chat.ID, fmt.Sprintf("Language set to %s", lang))
 }
 
 func (h *Handler) sendText(chatID int64, text string) error {

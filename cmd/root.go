@@ -35,17 +35,17 @@ var rootCmd = &cobra.Command{
 		if modelName == "" {
 			modelName = cfg.DefaultModel
 		}
-		v, ok := modelVariants[modelName]
+		v, ok := config.ModelVariants[modelName]
 		if !ok {
 			log.Fatalf("unknown model %q", modelName)
 		}
 
-		modelPath := resolveModelPath(v, v.modelFile)
+		modelPath := config.ResolveModelPath(v, v.ModelFile)
 		var mmprojPath string
-		if v.mmprojFile != "" {
-			mmprojPath = resolveModelPath(v, v.mmprojFile)
+		if v.MMProjFile != "" {
+			mmprojPath = config.ResolveModelPath(v, v.MMProjFile)
 		}
-		backend := v.backend
+		backend := v.Backend
 
 		if cfg.TelegramToken == "" {
 			log.Fatal("TELEGRAM_BOT_TOKEN environment variable is not set")
@@ -63,7 +63,7 @@ var rootCmd = &cobra.Command{
 			}
 		}
 
-		b, err := bot.New(cfg, modelPath, mmprojPath, backend)
+		b, err := bot.New(cfg, modelPath, mmprojPath, modelName, backend)
 		if err != nil {
 			log.Printf("WARNING: Failed to create bot: %v — starting without ASR", err)
 			b, err = bot.NewWithoutASR(cfg)

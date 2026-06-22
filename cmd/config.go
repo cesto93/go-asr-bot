@@ -32,10 +32,10 @@ The file will be created with restricted permissions (0600).`,
 		changed := false
 
 		if configSetModel != "" {
-			if _, ok := modelVariants[configSetModel]; !ok {
+			if _, ok := config.ModelVariants[configSetModel]; !ok {
 				fmt.Printf("unknown model %q\n\navailable variants:\n", configSetModel)
-				keys := make([]string, 0, len(modelVariants))
-				for k := range modelVariants {
+				keys := make([]string, 0, len(config.ModelVariants))
+				for k := range config.ModelVariants {
 					keys = append(keys, k)
 				}
 				sort.Strings(keys)

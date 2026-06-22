@@ -31,11 +31,11 @@ var runCmd = &cobra.Command{
 		if modelName == "" {
 			modelName = cfg.DefaultModel
 		}
-		v, ok := modelVariants[modelName]
+		v, ok := config.ModelVariants[modelName]
 		if !ok {
 			fmt.Printf("unknown model %q\n\navailable variants:\n", modelName)
-			keys := make([]string, 0, len(modelVariants))
-			for k := range modelVariants {
+			keys := make([]string, 0, len(config.ModelVariants))
+			for k := range config.ModelVariants {
 				keys = append(keys, k)
 			}
 			sort.Strings(keys)
@@ -45,12 +45,12 @@ var runCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
-		modelPath := resolveModelPath(v, v.modelFile)
+		modelPath := config.ResolveModelPath(v, v.ModelFile)
 		var mmprojPath string
-		if v.mmprojFile != "" {
-			mmprojPath = resolveModelPath(v, v.mmprojFile)
+		if v.MMProjFile != "" {
+			mmprojPath = config.ResolveModelPath(v, v.MMProjFile)
 		}
-		backend := v.backend
+		backend := v.Backend
 
 		if _, err := os.Stat(modelPath); os.IsNotExist(err) {
 			fmt.Fprintf(os.Stderr, "Model file not found at %s\n", modelPath)

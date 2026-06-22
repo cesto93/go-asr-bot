@@ -23,11 +23,11 @@ Use "go-asr-bot list" to see available models, or
 	Run: func(cmd *cobra.Command, args []string) {
 		variant := args[0]
 
-		v, ok := modelVariants[variant]
+		v, ok := config.ModelVariants[variant]
 		if !ok {
 			fmt.Printf("unknown model %q\n\navailable variants:\n", variant)
-			keys := make([]string, 0, len(modelVariants))
-			for k := range modelVariants {
+			keys := make([]string, 0, len(config.ModelVariants))
+			for k := range config.ModelVariants {
 				keys = append(keys, k)
 			}
 			sort.Strings(keys)
@@ -37,7 +37,7 @@ Use "go-asr-bot list" to see available models, or
 			os.Exit(1)
 		}
 
-		modelDir := filepath.Join(rmModelPath, v.modelFile)
+		modelDir := filepath.Join(rmModelPath, v.ModelFile)
 
 		if _, err := os.Stat(modelDir); os.IsNotExist(err) {
 			fmt.Printf("model %q is not downloaded (directory %s does not exist)\n", variant, modelDir)
