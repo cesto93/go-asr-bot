@@ -142,6 +142,10 @@ var pullCmd = &cobra.Command{
 	Use:   "pull",
 	Short: "Download llama.cpp libraries and ASR models",
 	Run: func(cmd *cobra.Command, args []string) {
+		if len(args) > 0 {
+			pullModel = args[0]
+		}
+
 		if pullModel != "" {
 			if err := downloadModel(pullModel, pullModelPath, pullUpgrade); err != nil {
 				fmt.Println("failed to download model:", err.Error())
@@ -171,10 +175,21 @@ var pullCmd = &cobra.Command{
 			fmt.Println("installing llama.cpp version", pullVersion, "to", pullLibPath)
 		}
 
+		os.MkdirAll(pullLibPath, 0775)
 		if err := download.Get(runtime.GOARCH, runtime.GOOS, pullProcessor, pullVersion, pullLibPath); err != nil {
 			fmt.Println("failed to download llama.cpp:", err.Error())
 			os.Exit(1)
 		}
+		filepath.Walk(pullLibPath, func(path string, fi os.FileInfo, err error) error {
+			if err != nil {
+				return err
+			}
+			mode := fi.Mode() | 0020
+			if fi.IsDir() {
+				mode |= os.ModeSetgid
+			}
+			return os.Chmod(path, mode)
+		})
 
 		fmt.Println("done.")
 	},
@@ -187,7 +202,7 @@ func downloadModel(variant, destDir string, upgrade bool) error {
 	}
 
 	modelDir := filepath.Join(destDir, v.modelFile)
-	if err := os.MkdirAll(modelDir, 0755); err != nil {
+	if err := os.MkdirAll(modelDir, 0775); err != nil {
 		return fmt.Errorf("create directory %s: %w", modelDir, err)
 	}
 
@@ -228,6 +243,7 @@ func downloadFile(url, dest string) error {
 		return err
 	}
 	defer out.Close()
+	out.Chmod(0664)
 
 	resp, err := http.Get(url)
 	if err != nil {

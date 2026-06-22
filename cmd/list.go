@@ -56,7 +56,7 @@ func humanSize(bytes int64) string {
 }
 
 func listModels(dir string) error {
-	if err := os.MkdirAll(dir, 0755); err != nil {
+	if err := os.MkdirAll(dir, 0775); err != nil {
 		return fmt.Errorf("create directory %s: %w", dir, err)
 	}
 	entries, err := os.ReadDir(dir)

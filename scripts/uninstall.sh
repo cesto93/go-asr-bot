@@ -26,9 +26,8 @@ echo "Removing binary..."
 rm -f "${BIN_PATH}"
 
 if [ -d "${INSTALL_DIR}" ]; then
-	echo ""
-	echo "Data directory ${INSTALL_DIR} preserved."
-	echo "Remove it manually with: rm -rf ${INSTALL_DIR}"
+	echo "Removing data directory..."
+	rm -rf "${INSTALL_DIR}"
 fi
 
 echo "Removing system user ${USER_NAME}..."

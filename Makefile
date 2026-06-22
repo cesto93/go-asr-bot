@@ -11,6 +11,7 @@ build:
 	CGO_ENABLED=0 $(GO) build -o $(BIN) .
 
 build-crispasr:
+	$(GO) generate ./internal/asr/
 	CGO_ENABLED=1 $(GO) build -o $(BIN_C) .
 
 pull:
@@ -20,8 +21,7 @@ pull-model:
 	$(GO) run . pull --model $(MODEL)
 
 crispasr-lib:
-	cmake -S lib/crispasr -B lib/crispasr/build -DBUILD_SHARED_LIBS=ON -DCMAKE_BUILD_TYPE=Release
-	cmake --build lib/crispasr/build --target crispasr-lib -j$$(nproc)
+	$(GO) generate ./internal/asr/
 
 clean:
 	rm -f $(BIN) $(BIN_C)

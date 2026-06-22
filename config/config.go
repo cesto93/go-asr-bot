@@ -78,7 +78,7 @@ func Save(cfg *Config) error {
 	v.Set("default_model", cfg.DefaultModel)
 	v.Set("crispasr_threads", cfg.CrispasrThreads)
 
-	os.MkdirAll("/opt/go-asr", 0755)
+	os.MkdirAll("/opt/go-asr", 0775)
 
 	return v.WriteConfig()
 }

@@ -9,10 +9,13 @@ SERVICE_PATH="/etc/systemd/system/${SERVICE_NAME}"
 USER_NAME="${BIN_NAME}"
 
 INSTALL_SERVICE=1
+ACCESS_USER="${SUDO_USER:-}"
 
 while [ $# -gt 0 ]; do
 	case "$1" in
 		--no-service) INSTALL_SERVICE=0; shift ;;
+		--user) ACCESS_USER="$2"; shift 2 ;;
+		--user=*) ACCESS_USER="${1#*=}"; shift ;;
 		*) echo "Unknown option: $1" >&2; exit 1 ;;
 	esac
 done
@@ -41,9 +44,7 @@ if command -v cmake >/dev/null 2>&1 && command -v gcc >/dev/null 2>&1; then
 	fi
 	if [ "${CRISPASR_BUILD:-0}" -eq 1 ]; then
 		echo "Building CrispASR C library..."
-		cmake -S "${REPO_DIR}/lib/crispasr" -B "${REPO_DIR}/lib/crispasr/build" \
-			-DBUILD_SHARED_LIBS=ON -DCMAKE_BUILD_TYPE=Release
-		cmake --build "${REPO_DIR}/lib/crispasr/build" --target crispasr-lib -j"$(nproc)"
+		(cd "${REPO_DIR}" && go generate ./internal/asr/)
 		CGO_ENABLED=1
 	fi
 else
@@ -55,10 +56,19 @@ CGO_ENABLED=${CGO_ENABLED} go build -o "${BIN_PATH}" "${REPO_DIR}"
 chmod 755 "${BIN_PATH}"
 
 echo "Creating user ${USER_NAME}..."
-id -u "${USER_NAME}" &>/dev/null || useradd -r -s /usr/sbin/nologin -d "${INSTALL_DIR}" "${USER_NAME}"
+id -u "${USER_NAME}" &>/dev/null || useradd -r -s /usr/sbin/nologin -d "${INSTALL_DIR}" -g "${USER_NAME}" "${USER_NAME}"
+
+if [ -n "${ACCESS_USER}" ] && [ "${ACCESS_USER}" != "root" ]; then
+	echo "Adding user ${ACCESS_USER} to group ${USER_NAME}..."
+	usermod -a -G "${USER_NAME}" "${ACCESS_USER}"
+fi
 
 mkdir -p "${INSTALL_DIR}"
+mkdir -p "${INSTALL_DIR}/models"
 chown -R "${USER_NAME}:" "${INSTALL_DIR}"
+chmod -R g+rw "${INSTALL_DIR}"
+chmod o+w "${INSTALL_DIR}/models"
+chmod g+s "${INSTALL_DIR}" "${INSTALL_DIR}/models" 2>/dev/null || true
 
 if [ ! -f "${INSTALL_DIR}/.env" ]; then
 	echo "Creating ${INSTALL_DIR}/.env..."
@@ -85,6 +95,10 @@ sudo -u "${USER_NAME}" "${BIN_PATH}" pull --upgrade 2>/dev/null || echo "  (skip
 echo "Pulling default model (qwen3-asr-0.6b-q8_0)..."
 sudo -u "${USER_NAME}" "${BIN_PATH}" pull --model qwen3-asr-0.6b-q8_0 --upgrade 2>/dev/null || echo "  (skipped — run '${BIN_PATH} pull --model qwen3-asr-0.6b-q8_0' manually)"
 
+chown -R "${USER_NAME}:" "${INSTALL_DIR}"
+chmod -R g+rw "${INSTALL_DIR}"
+chmod o+w "${INSTALL_DIR}/models"
+
 if [ "${INSTALL_SERVICE}" -eq 1 ]; then
 	SERVICE_FILE="${REPO_DIR}/scripts/${SERVICE_NAME}"
 	if [ ! -f "${SERVICE_FILE}" ]; then
@@ -109,6 +123,9 @@ echo "  - Config: ${INSTALL_DIR}/.env"
 if [ "${INSTALL_SERVICE}" -eq 1 ]; then
 	echo "  - Service: ${SERVICE_PATH}"
 fi
+if [ -n "${ACCESS_USER}" ] && [ "${ACCESS_USER}" != "root" ]; then
+	echo "  - Group:   ${USER_NAME} (${ACCESS_USER} has write access)"
+fi
 echo ""
 echo "Set your TELEGRAM_BOT_TOKEN in ${INSTALL_DIR}/.env, then:"
 if [ "${INSTALL_SERVICE}" -eq 1 ]; then
@@ -121,6 +138,10 @@ if [ "${INSTALL_SERVICE}" -eq 1 ]; then
 	echo "Service commands:"
 	echo "  systemctl status ${SERVICE_NAME}"
 	echo "  journalctl -u ${SERVICE_NAME} -f"
+	echo ""
+fi
+if [ -n "${ACCESS_USER}" ] && [ "${ACCESS_USER}" != "root" ]; then
+	echo "NOTE: Log out and back in (or run 'newgrp ${USER_NAME}') for group membership to take effect."
 	echo ""
 fi
 echo "To use the CrispASR backend, pass --model <crispasr-variant> or set ASR_DEFAULT_MODEL in ${INSTALL_DIR}/.env"
