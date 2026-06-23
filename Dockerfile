@@ -2,7 +2,7 @@ ARG TARGETARCH=amd64
 
 # Stage 1: Download pre-built CrispASR libraries and package into the
 # tarball format that scripts/build-crispasr.sh expects.
-FROM golang:1.26 AS crispasr-download
+FROM debian:trixie-slim AS crispasr-download
 WORKDIR /src
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -83,7 +83,7 @@ RUN set -eu; \
     cp -a ggml-build/src/libggml*.so* lib/crispasr/build/ggml/src/; \
     cp -a ggml-build/src/libggml*.so* lib/crispasr/build/src/
 
-RUN CGO_ENABLED=1 go build -a -o /go-asr-bot .
+RUN CGO_ENABLED=1 go build -a -ldflags="-s -w" -o /go-asr-bot .
 
 # Stage 3: Runtime image
 FROM debian:trixie-slim
@@ -103,6 +103,8 @@ COPY --from=build \
     /src/lib/crispasr/build/src/libwhisper.so* \
     /usr/local/lib/
 COPY scripts/docker-entrypoint.sh /entrypoint.sh
+
+RUN strip --strip-unneeded /usr/local/lib/*.so* 2>/dev/null || true
 
 ENV LD_LIBRARY_PATH=/usr/local/lib
 
