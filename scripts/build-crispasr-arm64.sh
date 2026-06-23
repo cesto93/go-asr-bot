@@ -32,4 +32,30 @@ if ! ldconfig -p | grep -qF 'libopenblas.so.0'; then
 	rm -rf "$OPENBLAS_DIR"
 fi
 
+# Rebuild ggml from source without CPU-specific optimizations (e.g. SVE).
+# The pre-built libggml*.so* contain instructions that cause SIGILL on CPUs
+# without those extensions (e.g. Raspberry Pi 5 Cortex-A76).
+if command -v cmake >/dev/null 2>&1 && command -v curl >/dev/null 2>&1; then
+	echo "Rebuilding ggml from source (GGML_NATIVE=OFF)..."
+	GGML_SRC="$(mktemp -d)"
+	curl -sL "https://github.com/CrispStrobe/CrispASR/archive/refs/tags/v0.8.2.tar.gz" \
+		| tar xzf - --strip-components=1 -C "$GGML_SRC" "CrispASR-0.8.2/ggml"
+	touch "$GGML_SRC/ggml.pc.in"
+	GGML_BUILD="$(mktemp -d)"
+	cmake -B "$GGML_BUILD" -S "$GGML_SRC/ggml" \
+		-DBUILD_SHARED_LIBS=ON \
+		-DGGML_NATIVE=OFF \
+		-DGGML_OPENMP=ON \
+		-DGGML_BUILD_TESTS=OFF \
+		-DGGML_BUILD_EXAMPLES=OFF
+	cmake --build "$GGML_BUILD" -j "$(nproc)" --target ggml ggml-base ggml-cpu
+	cp -a "$GGML_BUILD/src/"libggml*.so* "$BUILD_DIR/ggml/src/"
+	cp -a "$GGML_BUILD/src/"libggml*.so* "$BUILD_DIR/src/"
+	rm -rf "$GGML_SRC" "$GGML_BUILD"
+	echo "ggml rebuilt successfully"
+else
+	echo "WARNING: cmake or curl not found; using pre-built ggml libraries."
+	echo "If you encounter SIGILL, install cmake+curl and re-run, or use Docker."
+fi
+
 echo "CrispASR libraries extracted successfully (arm64)"

@@ -59,24 +59,29 @@ RUN if [ "$TARGETARCH" = "arm64" ]; then \
         cd internal/asr && sh ../../scripts/build-crispasr.sh; \
     fi
 
-# Rebuild ggml from source without AVX-512 (amd64 only).
-# The pre-built libggml*.so* in the CrispASR tarball contain AVX-512
-# instructions that cause SIGILL on CPUs without AVX-512 support
-# (e.g. Intel i7-1355U). Not needed on arm64.
-RUN if [ "$TARGETARCH" != "arm64" ]; then \
+# Rebuild ggml from source without CPU-specific optimizations (e.g. AVX-512 on
+# amd64, SVE on arm64). The pre-built libggml*.so* in the CrispASR tarball
+# contain instructions that cause SIGILL on CPUs without those extensions
+# (e.g. Intel i7-1355U, Raspberry Pi 5).
+RUN set -eu; \
+    if [ "$TARGETARCH" = "arm64" ]; then \
+        url="https://github.com/CrispStrobe/CrispASR/archive/refs/tags/v0.8.2.tar.gz"; \
+        member="CrispASR-0.8.2/ggml"; \
+    else \
         url="https://github.com/CrispStrobe/CrispASR/archive/hf-space-bin.tar.gz"; \
-        curl -sL "$url" | tar xzf - --strip-components=1 "CrispASR-hf-space-bin/ggml"; \
-        touch ggml/ggml.pc.in; \
-        cmake -B ggml-build -S ggml \
-            -DBUILD_SHARED_LIBS=ON \
-            -DGGML_NATIVE=OFF \
-            -DGGML_OPENMP=ON \
-            -DGGML_BUILD_TESTS=OFF \
-            -DGGML_BUILD_EXAMPLES=OFF; \
-        cmake --build ggml-build -j "$(nproc)" --target ggml ggml-base ggml-cpu; \
-        cp -a ggml-build/src/libggml*.so* lib/crispasr/build/ggml/src/; \
-        cp -a ggml-build/src/libggml*.so* lib/crispasr/build/src/; \
-    fi
+        member="CrispASR-hf-space-bin/ggml"; \
+    fi; \
+    curl -sL "$url" | tar xzf - --strip-components=1 "$member"; \
+    touch ggml/ggml.pc.in; \
+    cmake -B ggml-build -S ggml \
+        -DBUILD_SHARED_LIBS=ON \
+        -DGGML_NATIVE=OFF \
+        -DGGML_OPENMP=ON \
+        -DGGML_BUILD_TESTS=OFF \
+        -DGGML_BUILD_EXAMPLES=OFF; \
+    cmake --build ggml-build -j "$(nproc)" --target ggml ggml-base ggml-cpu; \
+    cp -a ggml-build/src/libggml*.so* lib/crispasr/build/ggml/src/; \
+    cp -a ggml-build/src/libggml*.so* lib/crispasr/build/src/
 
 RUN CGO_ENABLED=1 go build -a -o /go-asr-bot .
 

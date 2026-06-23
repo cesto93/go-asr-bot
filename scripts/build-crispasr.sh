@@ -38,4 +38,30 @@ if ! ldconfig -p | grep -qF 'libopenblas.so.0'; then
 	rm -rf "$OPENBLAS_DIR"
 fi
 
+# Rebuild ggml from source without CPU-specific optimizations (e.g. AVX-512).
+# The pre-built libggml*.so* contain instructions that cause SIGILL on CPUs
+# without those extensions (e.g. Intel i7-1355U).
+if command -v cmake >/dev/null 2>&1 && command -v curl >/dev/null 2>&1; then
+	echo "Rebuilding ggml from source (GGML_NATIVE=OFF)..."
+	GGML_SRC="$(mktemp -d)"
+	curl -sL "https://github.com/CrispStrobe/CrispASR/archive/hf-space-bin.tar.gz" \
+		| tar xzf - --strip-components=1 -C "$GGML_SRC" "CrispASR-hf-space-bin/ggml"
+	touch "$GGML_SRC/ggml.pc.in"
+	GGML_BUILD="$(mktemp -d)"
+	cmake -B "$GGML_BUILD" -S "$GGML_SRC/ggml" \
+		-DBUILD_SHARED_LIBS=ON \
+		-DGGML_NATIVE=OFF \
+		-DGGML_OPENMP=ON \
+		-DGGML_BUILD_TESTS=OFF \
+		-DGGML_BUILD_EXAMPLES=OFF
+	cmake --build "$GGML_BUILD" -j "$(nproc)" --target ggml ggml-base ggml-cpu
+	cp -a "$GGML_BUILD/src/"libggml*.so* "$BUILD_DIR/ggml/src/"
+	cp -a "$GGML_BUILD/src/"libggml*.so* "$BUILD_DIR/src/"
+	rm -rf "$GGML_SRC" "$GGML_BUILD"
+	echo "ggml rebuilt successfully"
+else
+	echo "WARNING: cmake or curl not found; using pre-built ggml libraries."
+	echo "If you encounter SIGILL, install cmake+curl and re-run, or use Docker."
+fi
+
 echo "CrispASR libraries extracted successfully"
