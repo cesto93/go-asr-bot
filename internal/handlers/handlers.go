@@ -17,6 +17,7 @@ type Server interface {
 	SetModel(name string) error
 	CurrentModel() string
 	CurrentLanguage() string
+	DownloadModel(name string) error
 }
 
 type Handler struct {
@@ -28,6 +29,7 @@ type Handler struct {
 var BotCommands = []tgbotapi.BotCommand{
 	{Command: "start", Description: "Start the bot"},
 	{Command: "help", Description: "Show available commands"},
+	{Command: "download", Description: "Download an ASR model"},
 	{Command: "list", Description: "List downloaded models"},
 	{Command: "status", Description: "Show current model and language"},
 	{Command: "setmodel", Description: "Change ASR model"},
@@ -39,7 +41,9 @@ func HelpText() string {
 	b.WriteString("Available commands:\n")
 	for _, cmd := range BotCommands {
 		desc := cmd.Description
-		if cmd.Command == "setmodel" {
+		if cmd.Command == "download" {
+			desc = "<name> - Download an ASR model by variant name"
+		} else if cmd.Command == "setmodel" {
 			desc = "<name> - Change ASR model"
 		} else if cmd.Command == "setlang" {
 			desc = "<code> - Set language (ISO 639-1, empty to clear)"
@@ -80,6 +84,8 @@ func (h *Handler) handleCommand(msg *tgbotapi.Message) error {
 		return h.sendText(msg.Chat.ID, "Hello! I'm a Telegram bot. Send me a voice message to transcribe.")
 	case "help":
 		return h.sendText(msg.Chat.ID, HelpText())
+	case "download":
+		return h.handleDownload(msg)
 	case "list":
 		return h.handleList(msg)
 	case "status":
@@ -105,6 +111,29 @@ func (h *Handler) handleStatus(msg *tgbotapi.Message) error {
 		text += "\nASR: unavailable"
 	}
 	return h.sendText(msg.Chat.ID, text)
+}
+
+func (h *Handler) handleDownload(msg *tgbotapi.Message) error {
+	args := strings.Fields(msg.CommandArguments())
+	if len(args) == 0 {
+		names := make([]string, 0, len(config.ModelVariants))
+		for k := range config.ModelVariants {
+			names = append(names, k)
+		}
+		sort.Strings(names)
+		return h.sendText(msg.Chat.ID, "Usage: /download <name>\nAvailable models: "+strings.Join(names, ", "))
+	}
+
+	name := args[0]
+	if _, ok := config.ModelVariants[name]; !ok {
+		return h.sendText(msg.Chat.ID, "Unknown model. Use /download without arguments to list available models.")
+	}
+
+	if err := h.server.DownloadModel(name); err != nil {
+		return h.sendText(msg.Chat.ID, fmt.Sprintf("Failed to download model: %v", err))
+	}
+
+	return h.sendText(msg.Chat.ID, fmt.Sprintf("Model %s downloaded successfully.", name))
 }
 
 func (h *Handler) handleSetModel(msg *tgbotapi.Message) error {

@@ -82,6 +82,10 @@ func NewWithoutASR(cfg *config.Config) (*Bot, error) {
 	return b, nil
 }
 
+func (b *Bot) DownloadModel(name string) error {
+	return config.DownloadModel(name)
+}
+
 func (b *Bot) Reload() {
 	cfg := config.Load()
 	log.Printf("Reloading config from %s", config.ConfigPath())
