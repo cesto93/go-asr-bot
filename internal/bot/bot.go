@@ -82,10 +82,6 @@ func NewWithoutASR(cfg *config.Config) (*Bot, error) {
 	return b, nil
 }
 
-func (b *Bot) DownloadModel(name string) error {
-	return config.DownloadModel(name)
-}
-
 func (b *Bot) Reload() {
 	cfg := config.Load()
 	log.Printf("Reloading config from %s", config.ConfigPath())
@@ -132,7 +128,9 @@ func (b *Bot) SetModel(name string) error {
 	}
 
 	if _, err := os.Stat(modelPath); os.IsNotExist(err) {
-		return fmt.Errorf("model file not found at %s", modelPath)
+		if dlerr := config.DownloadModel(name); dlerr != nil {
+			return fmt.Errorf("model not found and download failed: %w", dlerr)
+		}
 	}
 	cfg := config.Load()
 
