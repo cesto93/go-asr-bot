@@ -1,0 +1,4 @@
+services:
+  bot:
+    platform: linux/arm64
+    image: ghcr.io/cesto93/go-asr-bot:latest-arm64
