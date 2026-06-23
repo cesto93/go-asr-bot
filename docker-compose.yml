@@ -10,7 +10,7 @@ services:
       - USER_ID=${USER_ID:-0}
       - ASR_MODEL=${ASR_MODEL:-}
     volumes:
-      - ./config.yaml:/opt/go-asr-bot/config.yaml
+      - .:/opt/go-asr-bot
       - asr-models:/opt/go-asr-bot/models
     restart: unless-stopped
 
