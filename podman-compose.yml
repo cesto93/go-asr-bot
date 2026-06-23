@@ -1,0 +1,19 @@
+services:
+  bot:
+    image: ghcr.io/cesto93/go-asr-bot:latest
+    network_mode: host
+    env_file:
+      - .env
+    environment:
+      - ASR_DEFAULT_MODEL=${ASR_DEFAULT_MODEL:-parakeet-tdt-0.6b-v3-q4_k}
+      - ASR_LANGUAGE=${ASR_LANGUAGE:-}
+      - DEBUG=${DEBUG:-false}
+      - USER_ID=${USER_ID:-0}
+      - ASR_MODEL=${ASR_MODEL:-}
+    volumes:
+      - .:/opt/go-asr-bot:z
+      - asr-models:/opt/go-asr-bot/models
+    restart: unless-stopped
+
+volumes:
+  asr-models:
