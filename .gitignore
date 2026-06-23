@@ -1,6 +1,5 @@
 .env
 go-asr-bot
-models/
 data/
 go-asr-bot-crispasr
 lib-imported/
