@@ -38,4 +38,5 @@ if [[ ! -f "$COMPOSE_FILE" ]]; then
 fi
 
 echo "Using $COMPOSE_FILE"
+"${RUNTIME}-compose" -f "$COMPOSE_FILE" pull
 exec "${RUNTIME}-compose" -f "$COMPOSE_FILE" up -d
