@@ -17,7 +17,7 @@ CGO_ENABLED=1 go run . --model parakeet-tdt-0.6b-v3-q8_0
 | `TELEGRAM_BOT_TOKEN` | Bot token from BotFather (env takes precedence over config file) | (required) |
 | `DEBUG`              | Enable debug logging            | `false` |
 | `USER_ID`            | Restrict to single user         | `0` (all) |
-| `ASR_DEFAULT_MODEL`  | Default model variant           | `parakeet-tdt-0.6b-v3-q8_0` |
+| `ASR_DEFAULT_MODEL`  | Default model variant           | `parakeet-tdt-0.6b-v3-q4_k` |
 | `ASR_LANGUAGE`       | Source language (ISO 639-1)     | (none) |
 | `CRISPASR_THREADS`   | CPU threads for CrispASR        | `4` |
 

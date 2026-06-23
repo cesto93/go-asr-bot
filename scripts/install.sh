@@ -99,7 +99,7 @@ USER_ID=0
 ASR_LANGUAGE=
 
 # Default model variant (inferred from --model flag or this value)
-# ASR_DEFAULT_MODEL=parakeet-tdt-0.6b-v3-q8_0
+# ASR_DEFAULT_MODEL=parakeet-tdt-0.6b-v3-q4_k
 
 # CPU threads for CrispASR (only used with crispasr models)
 # CRISPASR_THREADS=4
@@ -107,8 +107,8 @@ EOF
 	echo ">>> Please edit ${INSTALL_DIR}/.env with your configuration"
 fi
 
-echo "Pulling default model (parakeet-tdt-0.6b-v3-q8_0)..."
-sudo -u "${USER_NAME}" "${BIN_PATH}" pull --model parakeet-tdt-0.6b-v3-q8_0 --upgrade 2>/dev/null || echo "  (skipped — run '${BIN_PATH} pull --model <variant>' manually)"
+echo "Pulling default model (parakeet-tdt-0.6b-v3-q4_k)..."
+sudo -u "${USER_NAME}" "${BIN_PATH}" pull --model parakeet-tdt-0.6b-v3-q4_k --upgrade 2>/dev/null || echo "  (skipped — run '${BIN_PATH} pull --model <variant>' manually)"
 
 chown -R "${USER_NAME}:" "${INSTALL_DIR}"
 chmod -R g+rw "${INSTALL_DIR}"
