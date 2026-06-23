@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"path/filepath"
 
@@ -11,6 +12,7 @@ import (
 
 func (h *Handler) handleVoice(msg *tgbotapi.Message) error {
 	if h.asr == nil {
+		log.Printf("ASR model not available for voice message from chat %d", msg.Chat.ID)
 		return h.sendText(msg.Chat.ID, "ASR model not available. Please download a model first using `go run . pull --model <name>`.")
 	}
 
