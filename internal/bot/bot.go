@@ -178,6 +178,7 @@ func (b *Bot) Run() error {
 			}
 			if err := b.handlers.HandleMessage(update.Message); err != nil {
 				log.Printf("Error handling message: %v", err)
+				b.api.Send(tgbotapi.NewMessage(update.Message.Chat.ID, fmt.Sprintf("Error: %v", err)))
 			}
 		}
 	}
