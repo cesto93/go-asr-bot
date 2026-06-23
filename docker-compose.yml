@@ -1,6 +1,6 @@
 services:
   bot:
-    image: go-asr-bot:latest
+    image: ghcr.io/cesto93/go-asr-bot:latest
     env_file:
       - .env
     environment:
