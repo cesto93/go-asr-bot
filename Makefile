@@ -18,6 +18,3 @@ docker-down:
 
 test:
 	$(GO) test ./...
-
-install:
-	${GO} install ./...
