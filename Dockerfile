@@ -1,33 +1,36 @@
-# Stage 1: Build CrispASR C library.
-# Cached independently — only invalidated when lib/crispasr/ sources change.
-FROM golang:1.26 AS crispasr-build
+# Stage 1: Download pre-built CrispASR libraries and package into the
+# tarball format that scripts/build-crispasr.sh expects.
+FROM golang:1.26 AS crispasr-download
 WORKDIR /src
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    cmake build-essential git \
+    ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
-COPY lib/crispasr/ lib/crispasr/
+ARG CRISPASR_TAG=hf-space-bin
+RUN set -eu; \
+    url="https://github.com/CrispStrobe/CrispASR/releases/download/${CRISPASR_TAG}/crispasr-bin-linux-x64.tar.gz"; \
+    mkdir -p /tmp/hf /tmp/pkg/libcrispasr-linux-x86_64/src /tmp/pkg/libcrispasr-linux-x86_64/ggml/src; \
+    curl -sL "$url" -o /tmp/hf.tar.gz; \
+    tar xzf /tmp/hf.tar.gz -C /tmp/hf; \
+    cp -a /tmp/hf/libcrispasr*.so* /tmp/pkg/libcrispasr-linux-x86_64/src/; \
+    cp -a /tmp/hf/libggml*.so* /tmp/pkg/libcrispasr-linux-x86_64/ggml/src/; \
+    ln -s libcrispasr.so /tmp/pkg/libcrispasr-linux-x86_64/src/libwhisper.so; \
+    mkdir -p lib-imported; \
+    tar czf lib-imported/libcrispasr-linux-x86_64.tar.gz -C /tmp/pkg libcrispasr-linux-x86_64; \
+    rm -rf /tmp/hf /tmp/hf.tar.gz
 
-RUN if [ ! -f lib/crispasr/CMakeLists.txt ]; then \
-      rm -rf lib/crispasr && \
-      git clone --depth 1 https://github.com/CrispStrobe/CrispASR lib/crispasr; \
-    fi
-
-RUN cmake -S lib/crispasr -B lib/crispasr/build \
-    -DBUILD_SHARED_LIBS=ON \
-    -DCMAKE_BUILD_TYPE=Release \
-    -DCRISPASR_BUILD_TESTS=OFF \
-    -DCRISPASR_BUILD_EXAMPLES=OFF \
-    -DCRISPASR_BUILD_SERVER=OFF \
-    -DCRISPASR_ALL_WARNINGS=OFF \
-    -DGGML_ALL_WARNINGS=OFF
-
-RUN cmake --build lib/crispasr/build --target crispasr-lib -j"$(nproc)"
-
-# Stage 2: Build Go binary using the prebuilt CrispASR from stage 1.
+# Stage 2: Build Go binary via go generate + go build.
 FROM golang:1.26 AS build
 WORKDIR /src
+
+# The pre-built libcrispasr.so links against libomp (LLVM OpenMP) and may
+# link against OpenBLAS; install both so the go-generate script's ldconfig
+# check passes instead of attempting a brittle remote download.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libomp5 \
+    libopenblas0-pthread \
+    && rm -rf /var/lib/apt/lists/*
 
 COPY go.mod go.sum ./
 RUN go mod download
@@ -38,7 +41,9 @@ COPY config/ config/
 COPY main.go .
 COPY scripts/ scripts/
 
-COPY --from=crispasr-build /src/lib/crispasr/ lib/crispasr/
+COPY --from=crispasr-download /src/lib-imported/ lib-imported/
+
+RUN go generate ./internal/asr/
 
 RUN CGO_ENABLED=1 go build -a -o /go-asr-bot .
 
@@ -48,6 +53,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     libffi8 \
     libgomp1 \
+    libomp5 \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=build /go-asr-bot /usr/local/bin/go-asr-bot
