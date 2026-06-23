@@ -88,6 +88,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libffi8 \
     libgomp1 \
     libomp5 \
+    libopenblas0-pthread \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=build /go-asr-bot /usr/local/bin/go-asr-bot
