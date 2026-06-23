@@ -195,9 +195,6 @@ func determineBackend(name string) string {
 			return v.Backend
 		}
 	}
-	if strings.Contains(name, "Qwen3-ASR") || strings.Contains(name, "qwen3-asr") {
-		return "yzma"
-	}
 	return "crispasr"
 }
 

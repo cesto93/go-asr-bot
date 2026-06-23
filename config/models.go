@@ -13,30 +13,6 @@ type ModelVariant struct {
 }
 
 var ModelVariants = map[string]ModelVariant{
-	"qwen3-asr-0.6b-q8_0": {
-		ModelFile:  "Qwen3-ASR-0.6B-Q8_0.gguf",
-		MMProjFile: "mmproj-Qwen3-ASR-0.6B-Q8_0.gguf",
-		BaseURL:    "https://huggingface.co/ggml-org/Qwen3-ASR-0.6B-GGUF/resolve/main",
-		Backend:    "yzma",
-	},
-	"qwen3-asr-0.6b-bf16": {
-		ModelFile:  "Qwen3-ASR-0.6B-bf16.gguf",
-		MMProjFile: "mmproj-Qwen3-ASR-0.6B-bf16.gguf",
-		BaseURL:    "https://huggingface.co/ggml-org/Qwen3-ASR-0.6B-GGUF/resolve/main",
-		Backend:    "yzma",
-	},
-	"qwen3-asr-1.7b-q8_0": {
-		ModelFile:  "Qwen3-ASR-1.7B-Q8_0.gguf",
-		MMProjFile: "mmproj-Qwen3-ASR-1.7B-Q8_0.gguf",
-		BaseURL:    "https://huggingface.co/ggml-org/Qwen3-ASR-1.7B-GGUF/resolve/main",
-		Backend:    "yzma",
-	},
-	"qwen3-asr-1.7b-bf16": {
-		ModelFile:  "Qwen3-ASR-1.7B-bf16.gguf",
-		MMProjFile: "mmproj-Qwen3-ASR-1.7B-bf16.gguf",
-		BaseURL:    "https://huggingface.co/ggml-org/Qwen3-ASR-1.7B-GGUF/resolve/main",
-		Backend:    "yzma",
-	},
 	"cohere-transcribe-f16": {
 		ModelFile: "cohere-transcribe.gguf",
 		BaseURL:   "https://huggingface.co/cstr/cohere-transcribe-03-2026-GGUF/resolve/main",

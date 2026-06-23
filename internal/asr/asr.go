@@ -19,10 +19,6 @@ func NewFromConfig(cfg *config.Config, modelPath, mmprojPath, backend string) (E
 		}
 		return fn(modelPath, cfg.CrispasrThreads, cfg.Language)
 	default:
-		e := newYzma(modelPath, mmprojPath, config.DefaultYZMALib, cfg.Language)
-		if err := e.Init(); err != nil {
-			return nil, fmt.Errorf("yzma init: %w", err)
-		}
-		return e, nil
+		return nil, fmt.Errorf("unknown backend %q", backend)
 	}
 }

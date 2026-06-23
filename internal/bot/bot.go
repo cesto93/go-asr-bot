@@ -130,12 +130,6 @@ func (b *Bot) SetModel(name string) error {
 	if _, err := os.Stat(modelPath); os.IsNotExist(err) {
 		return fmt.Errorf("model file not found at %s", modelPath)
 	}
-	if v.Backend == "yzma" && mmprojPath != "" {
-		if _, err := os.Stat(mmprojPath); os.IsNotExist(err) {
-			return fmt.Errorf("multimodal projector not found at %s", mmprojPath)
-		}
-	}
-
 	cfg := config.Load()
 
 	if b.engine != nil {

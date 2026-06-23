@@ -20,7 +20,33 @@ RUN set -eu; \
     tar czf lib-imported/libcrispasr-linux-x86_64.tar.gz -C /tmp/pkg libcrispasr-linux-x86_64; \
     rm -rf /tmp/hf /tmp/hf.tar.gz
 
-# Stage 2: Build Go binary via go generate + go build.
+# Stage 2: Build ggml from CrispASR's vendored source without AVX-512.
+# The pre-built libggml*.so* in the CrispASR tarball contain AVX-512
+# instructions that SIGILL on older CPUs (i7-1355U, no AVX-512).
+# Building from the same source with GGML_AVX512=OFF (default) produces
+# compatible libraries.
+FROM golang:1.26 AS ggml-build
+WORKDIR /src
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates \
+    cmake \
+    && rm -rf /var/lib/apt/lists/*
+
+ARG CRISPASR_TAG=hf-space-bin
+RUN set -eu; \
+    url="https://github.com/CrispStrobe/CrispASR/archive/${CRISPASR_TAG}.tar.gz"; \
+    curl -sL "$url" | tar xzf - --strip-components=1 "CrispASR-${CRISPASR_TAG}/ggml"; \
+    touch ggml/ggml.pc.in; \
+    cmake -B build -S ggml \
+        -DBUILD_SHARED_LIBS=ON \
+        -DGGML_NATIVE=OFF \
+        -DGGML_OPENMP=ON \
+        -DGGML_BUILD_TESTS=OFF \
+        -DGGML_BUILD_EXAMPLES=OFF; \
+    cmake --build build -j "$(nproc)" --target ggml ggml-base ggml-cpu
+
+# Stage 3: Build Go binary via go generate + go build.
 FROM golang:1.26 AS build
 WORKDIR /src
 
@@ -45,9 +71,14 @@ COPY --from=crispasr-download /src/lib-imported/ lib-imported/
 
 RUN go generate ./internal/asr/
 
+# Overwrite the AVX-512-laden ggml .so files with our non-AVX-512 build.
+# COPY preserves symlinks, so the .so -> .so.0 -> .so.0.10.2 chain stays intact.
+COPY --from=ggml-build /src/build/src/libggml*.so* /src/lib/crispasr/build/ggml/src/
+COPY --from=ggml-build /src/build/src/libggml*.so* /src/lib/crispasr/build/src/
+
 RUN CGO_ENABLED=1 go build -a -o /go-asr-bot .
 
-# Stage 3: Runtime image
+# Stage 4: Runtime image
 FROM debian:trixie-slim
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \

@@ -17,7 +17,7 @@ var (
 )
 
 func init() {
-	rootCmd.Flags().StringVar(&flagModel, "model", "", "ASR model name (one of: qwen3-asr-0.6b-q8_0, qwen3-asr-0.6b-bf16, qwen3-asr-1.7b-q8_0, qwen3-asr-1.7b-bf16, cohere-transcribe-f16, cohere-transcribe-q8_0, cohere-transcribe-q4_k, parakeet-tdt-0.6b-v3, parakeet-tdt-0.6b-v3-q8_0, parakeet-tdt-0.6b-v3-q5_0, parakeet-tdt-0.6b-v3-q4_k)")
+	rootCmd.Flags().StringVar(&flagModel, "model", "", "ASR model name")
 	rootCmd.Flags().StringVar(&flagLang, "lang", "", "Source language (ISO 639-1, e.g. en, fr, de)")
 }
 
@@ -55,12 +55,6 @@ var rootCmd = &cobra.Command{
 			log.Printf("WARNING: Model file not found at %s — ASR unavailable", modelPath)
 			modelPath = ""
 			mmprojPath = ""
-		} else if backend == "yzma" {
-			if _, err := os.Stat(mmprojPath); os.IsNotExist(err) {
-				log.Printf("WARNING: Multimodal projector file not found at %s — ASR unavailable", mmprojPath)
-				modelPath = ""
-				mmprojPath = ""
-			}
 		}
 
 		b, err := bot.New(cfg, modelPath, mmprojPath, modelName, backend)

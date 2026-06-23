@@ -11,7 +11,7 @@ import (
 
 const DataDir = "/opt/go-asr-bot"
 
-const DefaultYZMALib = DataDir + "/llamacpp"
+
 
 func ConfigPath() string {
 	if p := os.Getenv("CONFIG_PATH"); p != "" {
@@ -52,7 +52,7 @@ func Load() *Config {
 	v.SetDefault("debug", false)
 	v.SetDefault("user_id", 0)
 	v.SetDefault("language", "")
-	v.SetDefault("default_model", "qwen3-asr-0.6b-q8_0")
+	v.SetDefault("default_model", "parakeet-tdt-0.6b-v3-q8_0")
 	v.SetDefault("crispasr_threads", 4)
 
 	v.BindEnv("debug", "DEBUG")

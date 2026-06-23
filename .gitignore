@@ -1,6 +1,5 @@
 .env
 go-asr-bot
-llamacpp/
 models/
 data/
 go-asr-bot-crispasr

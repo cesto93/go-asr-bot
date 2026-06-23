@@ -6,11 +6,9 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"runtime"
 	"strings"
 
 	"github.com/cesto93/go-asr-bot/config"
-	"github.com/hybridgroup/yzma/pkg/download"
 	"github.com/spf13/cobra"
 )
 
@@ -53,68 +51,28 @@ func (pr *progressReader) print() {
 
 
 var (
-	pullLibPath     string
-	pullProcessor   string
-	pullVersion     string
-	pullUpgrade     bool
-	pullModel       string
-	pullModelPath   string
+	pullUpgrade   bool
+	pullModel     string
+	pullModelPath string
 )
 
 var pullCmd = &cobra.Command{
 	Use:   "pull",
-	Short: "Download llama.cpp libraries and ASR models",
+	Short: "Download ASR models",
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) > 0 {
 			pullModel = args[0]
 		}
 
-		if pullModel != "" {
-			if err := downloadModel(pullModel, pullModelPath, pullUpgrade); err != nil {
-				fmt.Println("failed to download model:", err.Error())
-				os.Exit(1)
-			}
-			return
-		}
-
-		if !pullUpgrade {
-			if download.AlreadyInstalled(pullLibPath) {
-				fmt.Println("llama.cpp already installed at", pullLibPath)
-				return
-			}
-		}
-
-		if pullProcessor == "" {
-			pullProcessor = "cpu"
-			if cudaInstalled, cudaVersion := download.HasCUDA(); cudaInstalled {
-				fmt.Printf("CUDA detected (version %s), using CUDA build\n", cudaVersion)
-				pullProcessor = "cuda"
-			}
-		}
-
-		if pullVersion == "" || pullVersion == "latest" {
-			fmt.Println("installing latest llama.cpp version to", pullLibPath)
-		} else {
-			fmt.Println("installing llama.cpp version", pullVersion, "to", pullLibPath)
-		}
-
-		os.MkdirAll(pullLibPath, 0775)
-		if err := download.Get(runtime.GOARCH, runtime.GOOS, pullProcessor, pullVersion, pullLibPath); err != nil {
-			fmt.Println("failed to download llama.cpp:", err.Error())
+		if pullModel == "" {
+			fmt.Println("no model specified. Use --model to specify a model variant.")
 			os.Exit(1)
 		}
-		filepath.Walk(pullLibPath, func(path string, fi os.FileInfo, err error) error {
-			if err != nil {
-				return err
-			}
-			mode := fi.Mode() | 0020
-			if fi.IsDir() {
-				mode |= os.ModeSetgid
-			}
-			return os.Chmod(path, mode)
-		})
 
-		fmt.Println("done.")
+		if err := downloadModel(pullModel, pullModelPath, pullUpgrade); err != nil {
+			fmt.Println("failed to download model:", err.Error())
+			os.Exit(1)
+		}
 	},
 }
 
@@ -195,14 +153,10 @@ func downloadFile(url, dest string) error {
 }
 
 func init() {
-	pullLibPath = "/opt/go-asr-bot/llamacpp"
 	pullModelPath = config.ModelsDir()
 
-	pullCmd.Flags().StringVar(&pullLibPath, "lib-path", pullLibPath, "destination directory for llama.cpp libraries")
-	pullCmd.Flags().StringVar(&pullProcessor, "processor", "", "processor type: cpu, cuda, vulkan, rocm, metal (auto-detected if empty)")
-	pullCmd.Flags().StringVar(&pullVersion, "version", "latest", "llama.cpp version to download (e.g. b1234)")
 	pullCmd.Flags().BoolVar(&pullUpgrade, "upgrade", false, "force re-download even if already installed")
-	pullCmd.Flags().StringVar(&pullModel, "model", "", "ASR model variant to download (qwen3-asr-0.6b-q8_0, qwen3-asr-0.6b-bf16, qwen3-asr-1.7b-q8_0, qwen3-asr-1.7b-bf16, cohere-transcribe-f16, cohere-transcribe-q8_0, cohere-transcribe-q4_k, parakeet-tdt-0.6b-v3, parakeet-tdt-0.6b-v3-q8_0, parakeet-tdt-0.6b-v3-q5_0, parakeet-tdt-0.6b-v3-q4_k)")
+	pullCmd.Flags().StringVar(&pullModel, "model", "", "ASR model variant to download")
 	pullCmd.Flags().StringVar(&pullModelPath, "model-path", pullModelPath, "destination directory for model files")
 	rootCmd.AddCommand(pullCmd)
 }

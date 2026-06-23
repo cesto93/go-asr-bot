@@ -2,18 +2,12 @@
 
 Go-based Telegram bot using `github.com/go-telegram-bot-api/telegram-bot-api/v5`.
 
-ASR transcription via two backends:
-- **yzma** (default): `github.com/hybridgroup/yzma` with llama.cpp and Qwen3-ASR
-- **crispasr**: CrispASR C library wrapping 26+ ASR backends (parakeet, canary, whisper, cohere-transcribe, etc.)
+ASR transcription via **CrispASR**: CrispASR C library wrapping 26+ ASR backends (parakeet, canary, whisper, cohere-transcribe, etc.)
 
 ## Run
 
 ```bash
-# yzma (default)
-TELEGRAM_BOT_TOKEN=your_token go run .
-
-# CrispASR (pre-built binary, set up via go generate)
-CGO_ENABLED=1 go run . --model parakeet-tdt-0.6b-v3-q4_k
+CGO_ENABLED=1 go run . --model parakeet-tdt-0.6b-v3-q8_0
 ```
 
 ## Configuration
@@ -23,7 +17,7 @@ CGO_ENABLED=1 go run . --model parakeet-tdt-0.6b-v3-q4_k
 | `TELEGRAM_BOT_TOKEN` | Bot token from BotFather (env takes precedence over config file) | (required) |
 | `DEBUG`              | Enable debug logging            | `false` |
 | `USER_ID`            | Restrict to single user         | `0` (all) |
-| `ASR_DEFAULT_MODEL`  | Default model variant           | `qwen3-asr-0.6b-q8_0` |
+| `ASR_DEFAULT_MODEL`  | Default model variant           | `parakeet-tdt-0.6b-v3-q8_0` |
 | `ASR_LANGUAGE`       | Source language (ISO 639-1)     | (none) |
 | `CRISPASR_THREADS`   | CPU threads for CrispASR        | `4` |
 
@@ -31,14 +25,9 @@ Model paths are always inferred from the selected model variant (via `--model` f
 
 ## Pull models
 
-Model downloads use direct HTTP (not yzma's go-getter), with a live progress bar:
+Model downloads use direct HTTP with a live progress bar:
 
 ```bash
-# yzma models (Qwen3-ASR)
-go run . pull --model qwen3-asr-0.6b-q8_0
-go run . pull --model qwen3-asr-1.7b-q8_0
-
-# CrispASR models (backend auto-detected from variant name)
 go run . pull --model cohere-transcribe-q8_0
 go run . pull --model cohere-transcribe-q4_k
 go run . pull --model cohere-transcribe-f16
@@ -49,9 +38,6 @@ go run . pull --model parakeet-tdt-0.6b-v3
 
 # List downloaded models
 go run . list
-
-# llama.cpp libraries (for yzma backend)
-go run . pull
 ```
 
 ## Build CrispASR C library
@@ -65,13 +51,21 @@ go build .
 
 The pre-built tarball is cached in `lib-imported/` — no CMake or submodule needed.
 
+## Docker
+
+### AVX-512 SIGILL fix
+
+The pre-built `libggml*.so*` files bundled with CrispASR contain AVX-512 instructions that cause SIGILL on CPUs without AVX-512 support (e.g. Intel i7-1355U).
+
+The Dockerfile works around this by rebuilding ggml from the CrispASR vendored source (in `ggml-build` stage) with `-DGGML_NATIVE=OFF` (AVX-512 defaults to OFF). The resulting .so files replace the pre-built ones before the Go binary is linked.
+
 ## Project structure
 
 ```
 main.go              # entry point, graceful shutdown
 cmd/                 # cobra commands (root, pull, list, run)
 config/config.go     # env-based config
-internal/asr/        # Engine interface + backends (yzma, crispasr)
+internal/asr/        # Engine interface + backends (crispasr)
 internal/bot/bot.go  # bot struct, long-polling updates loop
 internal/handlers/   # message & command handlers
 lib-imported/        # Pre-built CrispASR tarball (downloaded by go generate)
@@ -83,9 +77,6 @@ Each model variant lives in its own subdirectory named after the model `.gguf` f
 
 ```
 /opt/go-asr-bot/models/
-├── Qwen3-ASR-0.6B-Q8_0.gguf/
-│   ├── Qwen3-ASR-0.6B-Q8_0.gguf
-│   └── mmproj-Qwen3-ASR-0.6B-Q8_0.gguf
 ├── cohere-transcribe-q8_0.gguf/
 │   └── cohere-transcribe-q8_0.gguf
 ├── cohere-transcribe-q4_k.gguf/
@@ -102,7 +93,7 @@ Each model variant lives in its own subdirectory named after the model `.gguf` f
 
 ## Notes
 
-- Model download uses `net/http` directly (not yzma's `download.GetModel`/go-getter), writing files straight to the destination path without extra directory nesting. A terminal progress bar shows percentage and sizes.
+- Model download uses `net/http` directly, writing files straight to the destination path without extra directory nesting. A terminal progress bar shows percentage and sizes.
 - If a model directory contains a subdirectory instead of the expected file (e.g. from an older download), `resolveModelPath` in `cmd/pull.go` drills one level deeper automatically.
 
 ## Conventions
