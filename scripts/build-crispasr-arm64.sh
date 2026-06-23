@@ -40,7 +40,7 @@ if command -v cmake >/dev/null 2>&1 && command -v curl >/dev/null 2>&1; then
 	GGML_SRC="$(mktemp -d)"
 	curl -sL "https://github.com/CrispStrobe/CrispASR/archive/refs/tags/v0.8.2.tar.gz" \
 		| tar xzf - --strip-components=1 -C "$GGML_SRC" "CrispASR-0.8.2/ggml"
-	touch "$GGML_SRC/ggml.pc.in"
+	touch "$GGML_SRC/ggml/ggml.pc.in"
 	GGML_BUILD="$(mktemp -d)"
 	cmake -B "$GGML_BUILD" -S "$GGML_SRC/ggml" \
 		-DBUILD_SHARED_LIBS=ON \
