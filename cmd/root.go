@@ -52,9 +52,12 @@ var rootCmd = &cobra.Command{
 		}
 
 		if _, err := os.Stat(modelPath); os.IsNotExist(err) {
-			log.Printf("WARNING: Model file not found at %s — ASR unavailable", modelPath)
-			modelPath = ""
-			mmprojPath = ""
+			log.Printf("Model file not found at %s — downloading…", modelPath)
+			if err := config.DownloadModel(modelName); err != nil {
+				log.Printf("WARNING: Failed to download model %s: %v — ASR unavailable", modelName, err)
+				modelPath = ""
+				mmprojPath = ""
+			}
 		}
 
 		b, err := bot.New(cfg, modelPath, mmprojPath, modelName, backend)
