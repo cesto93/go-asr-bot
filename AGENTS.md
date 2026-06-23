@@ -12,7 +12,7 @@ ASR transcription via two backends:
 # yzma (default)
 TELEGRAM_BOT_TOKEN=your_token go run .
 
-# CrispASR (auto-built via go generate when cmake is available)
+# CrispASR (pre-built binary, set up via go generate)
 CGO_ENABLED=1 go run . --model parakeet-tdt-0.6b-v3-q4_k
 ```
 
@@ -56,14 +56,14 @@ go run . pull
 
 ## Build CrispASR C library
 
-The CrispASR C library is built automatically via `go generate` when cmake is available:
+The CrispASR C library is pulled as a pre-built binary from GitHub releases. `go generate` downloads and extracts it:
 
 ```bash
-git submodule add https://github.com/CrispStrobe/CrispASR lib/crispasr
-go generate ./internal/asr/
+CGO_ENABLED=1 go generate ./internal/asr/
+go build .
 ```
 
-Then build the bot with `CGO_ENABLED=1`.
+The pre-built tarball is cached in `lib-imported/` — no CMake or submodule needed.
 
 ## Project structure
 
@@ -74,7 +74,7 @@ config/config.go     # env-based config
 internal/asr/        # Engine interface + backends (yzma, crispasr)
 internal/bot/bot.go  # bot struct, long-polling updates loop
 internal/handlers/   # message & command handlers
-lib/crispasr/        # CrispASR git submodule
+lib-imported/        # Pre-built CrispASR tarball (downloaded by go generate)
 ```
 
 ## Models directory

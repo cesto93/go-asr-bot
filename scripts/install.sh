@@ -30,25 +30,33 @@ fi
 
 command -v go >/dev/null 2>&1 || { echo "Go is not installed. Install Go first: https://go.dev/dl/" >&2; exit 1; }
 
-# Build CrispASR C library if submodule and build tools are available
+# Set up CrispASR C library via pre-built tarball + go generate.
 CGO_ENABLED=0
-if command -v cmake >/dev/null 2>&1 && command -v gcc >/dev/null 2>&1; then
-	if [ -f "${REPO_DIR}/lib/crispasr/CMakeLists.txt" ]; then
-		CRISPASR_BUILD=1
-	elif [ -d "${REPO_DIR}/.git" ] && [ -f "${REPO_DIR}/.gitmodules" ]; then
-		echo "Initializing CrispASR submodule..."
-		git -C "${REPO_DIR}" submodule update --init lib/crispasr
-		CRISPASR_BUILD=1
+TARBALL="${REPO_DIR}/lib-imported/libcrispasr-linux-x86_64.tar.gz"
+if [ ! -f "$TARBALL" ] && (command -v curl >/dev/null 2>&1 || command -v wget >/dev/null 2>&1); then
+	echo "Downloading pre-built CrispASR libraries..."
+	mkdir -p "${REPO_DIR}/lib-imported" /tmp/crispasr-hf /tmp/crispasr-pkg/libcrispasr-linux-x86_64/src /tmp/crispasr-pkg/libcrispasr-linux-x86_64/ggml/src
+	if command -v curl >/dev/null 2>&1; then
+		curl -sL "https://github.com/CrispStrobe/CrispASR/releases/download/hf-space-bin/crispasr-bin-linux-x64.tar.gz" -o /tmp/crispasr-bin.tar.gz
 	else
-		echo "CrispASR submodule not available — building without CrispASR" >&2
+		wget -q "https://github.com/CrispStrobe/CrispASR/releases/download/hf-space-bin/crispasr-bin-linux-x64.tar.gz" -O /tmp/crispasr-bin.tar.gz
 	fi
-	if [ "${CRISPASR_BUILD:-0}" -eq 1 ]; then
-		echo "Building CrispASR C library..."
-		(cd "${REPO_DIR}" && go generate ./internal/asr/)
+	tar xzf /tmp/crispasr-bin.tar.gz -C /tmp/crispasr-hf
+	cp -a /tmp/crispasr-hf/libcrispasr*.so* /tmp/crispasr-pkg/libcrispasr-linux-x86_64/src/
+	cp -a /tmp/crispasr-hf/libggml*.so* /tmp/crispasr-pkg/libcrispasr-linux-x86_64/ggml/src/
+	ln -s libcrispasr.so /tmp/crispasr-pkg/libcrispasr-linux-x86_64/src/libwhisper.so
+	tar czf "$TARBALL" -C /tmp/crispasr-pkg libcrispasr-linux-x86_64
+	rm -rf /tmp/crispasr-hf /tmp/crispasr-pkg /tmp/crispasr-bin.tar.gz
+fi
+if [ -f "$TARBALL" ]; then
+	echo "Building CrispASR C library via go generate..."
+	if (cd "${REPO_DIR}" && CGO_ENABLED=1 go generate ./internal/asr/); then
 		CGO_ENABLED=1
+	else
+		echo "go generate failed — building without CrispASR" >&2
 	fi
 else
-	echo "cmake/gcc not found — building without CrispASR" >&2
+	echo "CrispASR tarball not available — building without CrispASR" >&2
 fi
 
 echo "Building ${BIN_NAME} binary..."

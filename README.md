@@ -11,7 +11,7 @@ Built with `github.com/go-telegram-bot-api/telegram-bot-api/v5`.
 - Go 1.26+
 - A Telegram bot token from [@BotFather](https://t.me/BotFather)
 - For yzma: llama.cpp shared libraries in `/opt/go-asr-bot/llamacpp` (or configured path)
-- For CrispASR: `libcrispasr.so` built from source (see [Build CrispASR](#build-crispasr-c-library))
+- For CrispASR: `libcrispasr.so` from pre-built release (see [Build CrispASR](#build-crispasr-c-library))
 
 ## Quick start
 
@@ -51,7 +51,7 @@ sudo ./scripts/install.sh
 ```
 
 This will:
-- Build the binary (optionally with CrispASR support if cmake/gcc are available)
+- Build the binary (optionally with CrispASR support if curl/wget are available)
 - Create the `go-asr-bot` system user
 - Create `/opt/go-asr-bot/` with a `.env` template
 - Pull llama.cpp libraries and the default yzma model
@@ -67,7 +67,7 @@ sudo systemctl restart go-asr-bot
 
 ### CrispASR backend
 
-The install script auto-detects if cmake/gcc are available, initializes the CrispASR submodule, and builds `libcrispasr.so` — no manual steps needed:
+The install script auto-detects if curl/wget are available, downloads the pre-built CrispASR libraries, and runs `go generate` — no manual steps needed:
 
 ```bash
 sudo ./scripts/install.sh
@@ -85,13 +85,16 @@ The data directory `/opt/go-asr-bot` is preserved — remove it manually with `r
 
 ## Build CrispASR C library
 
+The CrispASR C library is provided as a pre-built binary from the project's GitHub releases. `go generate` handles downloading and extracting it:
+
 ```bash
-git submodule add https://github.com/CrispStrobe/CrispASR lib/crispasr
-cmake -S lib/crispasr -B lib/crispasr/build -DBUILD_SHARED_LIBS=ON -DCMAKE_BUILD_TYPE=Release
-cmake --build lib/crispasr/build --target crispasr -j$(nproc)
+# The install script handles this automatically, or manually:
+export CGO_ENABLED=1
+go generate ./internal/asr/
+go build .
 ```
 
-Then build the bot with `CGO_ENABLED=1`.
+The pre-built tarball is downloaded to `lib-imported/` on first run; no CMake or submodule needed.
 
 ## Configuration
 
@@ -155,6 +158,6 @@ config/config.go     # env-based config
 internal/asr/        # Engine interface + backends (yzma, crispasr)
 internal/bot/bot.go  # bot struct, long-polling updates loop
 internal/handlers/   # message & command handlers
-lib/crispasr/        # CrispASR git submodule
+lib-imported/        # Pre-built CrispASR tarball (generated)
 ```
 
