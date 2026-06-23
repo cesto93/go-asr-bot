@@ -1,7 +1,5 @@
 .git
 .env
 go-asr-bot
-go-asr-bot-crispasr
 
-models
 data
