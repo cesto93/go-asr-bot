@@ -5,3 +5,4 @@ data/
 go-asr-bot-crispasr
 lib-imported/
 *.deb
+config.yaml
