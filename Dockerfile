@@ -51,11 +51,12 @@ COPY scripts/ scripts/
 
 COPY --from=crispasr-download /src/lib-imported/ lib-imported/
 
-# Extract CrispASR libraries (arch-specific script)
+# Extract CrispASR libraries (arch-specific script).
+# Run from internal/asr/ so ../../ relative paths resolve to repo root.
 RUN if [ "$TARGETARCH" = "arm64" ]; then \
-        sh scripts/build-crispasr-arm64.sh; \
+        cd internal/asr && sh ../../scripts/build-crispasr-arm64.sh; \
     else \
-        sh scripts/build-crispasr.sh; \
+        cd internal/asr && sh ../../scripts/build-crispasr.sh; \
     fi
 
 # Rebuild ggml from source without AVX-512 (amd64 only).
