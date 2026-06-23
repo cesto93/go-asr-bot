@@ -5,6 +5,9 @@ services:
     network_mode: host
     env_file:
       - .env
+    environment:
+      - ASR_LANGUAGE=${ASR_LANGUAGE:-it}
+      - ASR_DEFAULT_MODEL=${ASR_DEFAULT_MODEL:-parakeet-tdt-0.6b-v3-q4_k}
     volumes:
       - .:/opt/go-asr-bot:z
       - asr-models:/opt/go-asr-bot/models

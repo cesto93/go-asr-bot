@@ -30,6 +30,7 @@ import "C"
 
 import (
 	"fmt"
+	"log"
 	"strings"
 	"unsafe"
 )
@@ -59,7 +60,16 @@ func newCrispasr(modelPath string, threads int, lang string) (*crispasrEngine, e
 		C.free(unsafe.Pointer(clang))
 	}
 
+	engine.warmup()
+
 	return engine, nil
+}
+
+func (e *crispasrEngine) warmup() {
+	silence := make([]float32, 8000)
+	if _, err := e.Transcribe(silence); err != nil {
+		log.Printf("warmup transcribe failed (non-fatal): %v", err)
+	}
 }
 
 func (e *crispasrEngine) Init() error {

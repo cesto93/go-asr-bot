@@ -5,7 +5,7 @@ services:
       - .env
     environment:
       - ASR_DEFAULT_MODEL=${ASR_DEFAULT_MODEL:-parakeet-tdt-0.6b-v3-q4_k}
-      - ASR_LANGUAGE=${ASR_LANGUAGE:-}
+      - ASR_LANGUAGE=${ASR_LANGUAGE:-it}
       - DEBUG=${DEBUG:-false}
       - USER_ID=${USER_ID:-0}
       - ASR_MODEL=${ASR_MODEL:-}

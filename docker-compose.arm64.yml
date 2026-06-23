@@ -4,3 +4,6 @@ services:
     image: ghcr.io/cesto93/go-asr-bot:arm64-latest
     env_file:
       - .env
+    environment:
+      - ASR_LANGUAGE=${ASR_LANGUAGE:-it}
+      - ASR_DEFAULT_MODEL=${ASR_DEFAULT_MODEL:-parakeet-tdt-0.6b-v3-q4_k}
