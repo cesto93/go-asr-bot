@@ -29,8 +29,7 @@ type Handler struct {
 var BotCommands = []tgbotapi.BotCommand{
 	{Command: "start", Description: "Start the bot"},
 	{Command: "help", Description: "Show available commands"},
-	{Command: "list", Description: "List downloaded models"},
-	{Command: "status", Description: "Show current model and language"},
+	{Command: "status", Description: "Show current model, language, and downloaded models"},
 	{Command: "setmodel", Description: "Set ASR model (downloads if needed)"},
 	{Command: "setlang", Description: "Set language (ISO 639-1, empty to clear)"},
 }
@@ -81,8 +80,6 @@ func (h *Handler) handleCommand(msg *tgbotapi.Message) error {
 		return h.sendText(msg.Chat.ID, "Hello! I'm a Telegram bot. Send me a voice message to transcribe.")
 	case "help":
 		return h.sendText(msg.Chat.ID, HelpText())
-	case "list":
-		return h.handleList(msg)
 	case "status":
 		return h.handleStatus(msg)
 	case "setmodel":
@@ -105,7 +102,43 @@ func (h *Handler) handleStatus(msg *tgbotapi.Message) error {
 	if h.asr == nil {
 		text += "\nASR: unavailable"
 	}
+
+	models := downloadedModels()
+	if len(models) > 0 {
+		text += "\n\nDownloaded models:\n"
+		for _, m := range models {
+			text += "  • " + m + "\n"
+		}
+	}
+
 	return h.sendText(msg.Chat.ID, text)
+}
+
+func downloadedModels() []string {
+	dir := config.ModelsDir()
+
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		log.Printf("Failed to read models directory: %v", err)
+		return nil
+	}
+
+	var models []string
+	for _, e := range entries {
+		if !e.IsDir() {
+			continue
+		}
+		ggufs := findGGUF(filepath.Join(dir, e.Name()))
+		for _, p := range ggufs {
+			name := modelVariantName(filepath.Base(p))
+			if name != "" {
+				models = append(models, name)
+			}
+		}
+	}
+
+	sort.Strings(models)
+	return models
 }
 
 func (h *Handler) handleSetModel(msg *tgbotapi.Message) error {
@@ -179,43 +212,6 @@ func (h *Handler) sendText(chatID int64, text string) error {
 	msg := tgbotapi.NewMessage(chatID, text)
 	_, err := h.bot.Send(msg)
 	return err
-}
-
-func (h *Handler) handleList(msg *tgbotapi.Message) error {
-	dir := config.ModelsDir()
-
-	entries, err := os.ReadDir(dir)
-	if err != nil {
-		log.Printf("Failed to read models directory: %v", err)
-		return h.sendText(msg.Chat.ID, fmt.Sprintf("Failed to read models directory: %v", err))
-	}
-
-	var models []string
-	for _, e := range entries {
-		if !e.IsDir() {
-			continue
-		}
-		ggufs := findGGUF(filepath.Join(dir, e.Name()))
-		for _, p := range ggufs {
-			name := modelVariantName(filepath.Base(p))
-			if name != "" {
-				models = append(models, name)
-			}
-		}
-	}
-
-	sort.Strings(models)
-
-	if len(models) == 0 {
-		return h.sendText(msg.Chat.ID, "No downloaded models found.")
-	}
-
-	text := "Downloaded models:\n"
-	for _, m := range models {
-		text += "  • " + m + "\n"
-	}
-
-	return h.sendText(msg.Chat.ID, text)
 }
 
 func (h *Handler) sendTranscribing(chatID int64) error {
