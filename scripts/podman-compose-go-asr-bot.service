@@ -1,0 +1,15 @@
+[Unit]
+Description=go-asr-bot podman-compose service
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+WorkingDirectory=__WORKDIR__
+ExecStart=/usr/bin/podman-compose -f __COMPOSE_FILE__ up -d
+ExecStop=/usr/bin/podman-compose -f __COMPOSE_FILE__ down
+StandardOutput=journal
+
+[Install]
+WantedBy=default.target

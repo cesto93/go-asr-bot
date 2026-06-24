@@ -38,4 +38,17 @@ if [[ ! -f "$COMPOSE_FILE" ]]; then
 fi
 
 echo "Using $COMPOSE_FILE"
-exec "${RUNTIME}-compose" -f "$COMPOSE_FILE" down
+
+if [[ "$RUNTIME" == "podman" ]]; then
+    SERVICE_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/systemd/user"
+    SERVICE_FILE="$SERVICE_DIR/podman-compose-go-asr-bot.service"
+
+    if [[ -f "$SERVICE_FILE" ]]; then
+        systemctl --user disable --now podman-compose-go-asr-bot.service || true
+        rm -f "$SERVICE_FILE"
+        systemctl --user daemon-reload
+        echo "Systemd user service removed."
+    fi
+fi
+
+"${RUNTIME}-compose" -f "$COMPOSE_FILE" down
