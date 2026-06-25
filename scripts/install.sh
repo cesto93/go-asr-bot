@@ -7,10 +7,11 @@ usage() {
 }
 
 RUNTIME=
+COMPOSE_CMD=
 while [[ $# -gt 0 ]]; do
     case "$1" in
-        --podman) RUNTIME=podman ;;
-        --docker) RUNTIME=docker ;;
+        --podman) RUNTIME=podman; COMPOSE_CMD="podman-compose" ;;
+        --docker) RUNTIME=docker; COMPOSE_CMD="docker compose" ;;
         *) usage ;;
     esac
     shift
@@ -38,7 +39,7 @@ if [[ ! -f "$COMPOSE_FILE" ]]; then
 fi
 
 echo "Using $COMPOSE_FILE"
-"${RUNTIME}-compose" -f "$COMPOSE_FILE" pull
+$COMPOSE_CMD -f "$COMPOSE_FILE" pull
 
 if [[ "$RUNTIME" == "podman" ]]; then
     PROJECT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
@@ -58,5 +59,5 @@ if [[ "$RUNTIME" == "podman" ]]; then
 
     echo "Systemd user service installed and started."
 else
-    "${RUNTIME}-compose" -f "$COMPOSE_FILE" up -d
+    $COMPOSE_CMD -f "$COMPOSE_FILE" up -d
 fi

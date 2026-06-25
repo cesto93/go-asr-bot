@@ -7,10 +7,11 @@ usage() {
 }
 
 RUNTIME=
+COMPOSE_CMD=
 while [[ $# -gt 0 ]]; do
     case "$1" in
-        --podman) RUNTIME=podman ;;
-        --docker) RUNTIME=docker ;;
+        --podman) RUNTIME=podman; COMPOSE_CMD="podman-compose" ;;
+        --docker) RUNTIME=docker; COMPOSE_CMD="docker compose" ;;
         *) usage ;;
     esac
     shift
@@ -51,4 +52,4 @@ if [[ "$RUNTIME" == "podman" ]]; then
     fi
 fi
 
-"${RUNTIME}-compose" -f "$COMPOSE_FILE" down
+$COMPOSE_CMD -f "$COMPOSE_FILE" down
