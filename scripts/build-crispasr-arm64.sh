@@ -6,7 +6,7 @@ BUILD_DIR="../../lib/crispasr/build"
 
 if [ ! -f "$TARBALL" ]; then
 	echo "ERROR: Pre-built CrispASR tarball not found at $TARBALL"
-	echo "Download from: https://github.com/CrispStrobe/CrispASR/releases/download/v0.8.2/libcrispasr-linux-arm64.tar.gz"
+	echo "Download from: https://github.com/CrispStrobe/CrispASR/releases/download/v0.8.4/libcrispasr-linux-arm64.tar.gz"
 	echo "and place it in lib-imported/"
 	exit 1
 fi
@@ -38,8 +38,8 @@ fi
 if command -v cmake >/dev/null 2>&1 && command -v curl >/dev/null 2>&1; then
 	echo "Rebuilding ggml from source (GGML_NATIVE=OFF)..."
 	GGML_SRC="$(mktemp -d)"
-	curl -sL "https://github.com/CrispStrobe/CrispASR/archive/refs/tags/v0.8.2.tar.gz" \
-		| tar xzf - --strip-components=1 -C "$GGML_SRC" "CrispASR-0.8.2/ggml"
+	curl -sL "https://github.com/CrispStrobe/CrispASR/archive/refs/tags/v0.8.4.tar.gz" \
+		| tar xzf - --strip-components=1 -C "$GGML_SRC" "CrispASR-0.8.4/ggml"
 	touch "$GGML_SRC/ggml/ggml.pc.in"
 	GGML_BUILD="$(mktemp -d)"
 	cmake -B "$GGML_BUILD" -S "$GGML_SRC/ggml" \

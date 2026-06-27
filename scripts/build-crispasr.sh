@@ -44,8 +44,8 @@ fi
 if command -v cmake >/dev/null 2>&1 && command -v curl >/dev/null 2>&1; then
 	echo "Rebuilding ggml from source (GGML_NATIVE=OFF)..."
 	GGML_SRC="$(mktemp -d)"
-	curl -sL "https://github.com/CrispStrobe/CrispASR/archive/hf-space-bin.tar.gz" \
-		| tar xzf - --strip-components=1 -C "$GGML_SRC" "CrispASR-hf-space-bin/ggml"
+	curl -sL "https://github.com/CrispStrobe/CrispASR/archive/refs/tags/v0.8.4.tar.gz" \
+		| tar xzf - --strip-components=1 -C "$GGML_SRC" "CrispASR-0.8.4/ggml"
 	touch "$GGML_SRC/ggml/ggml.pc.in"
 	GGML_BUILD="$(mktemp -d)"
 	cmake -B "$GGML_BUILD" -S "$GGML_SRC/ggml" \

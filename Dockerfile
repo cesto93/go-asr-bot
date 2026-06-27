@@ -13,20 +13,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 ARG TARGETARCH
 RUN set -eu; \
     if [ "$TARGETARCH" = "arm64" ]; then \
-        url="https://github.com/CrispStrobe/CrispASR/releases/download/v0.8.2/libcrispasr-linux-arm64.tar.gz"; \
+        url="https://github.com/CrispStrobe/CrispASR/releases/download/v0.8.4/libcrispasr-linux-arm64.tar.gz"; \
         mkdir -p lib-imported; \
         curl -sL "$url" -o lib-imported/libcrispasr-linux-arm64.tar.gz; \
     else \
-        url="https://github.com/CrispStrobe/CrispASR/releases/download/hf-space-bin/crispasr-bin-linux-x64.tar.gz"; \
-        mkdir -p /tmp/hf /tmp/pkg/libcrispasr-linux-x86_64/src /tmp/pkg/libcrispasr-linux-x86_64/ggml/src; \
-        curl -sL "$url" -o /tmp/hf.tar.gz; \
-        tar xzf /tmp/hf.tar.gz -C /tmp/hf; \
-        cp -a /tmp/hf/libcrispasr*.so* /tmp/pkg/libcrispasr-linux-x86_64/src/; \
-        cp -a /tmp/hf/libggml*.so* /tmp/pkg/libcrispasr-linux-x86_64/ggml/src/; \
-        ln -s libcrispasr.so /tmp/pkg/libcrispasr-linux-x86_64/src/libwhisper.so; \
+        url="https://github.com/CrispStrobe/CrispASR/releases/download/v0.8.4/libcrispasr-linux-x86_64.tar.gz"; \
         mkdir -p lib-imported; \
-        tar czf lib-imported/libcrispasr-linux-x86_64.tar.gz -C /tmp/pkg libcrispasr-linux-x86_64; \
-        rm -rf /tmp/hf /tmp/hf.tar.gz; \
+        curl -sL "$url" -o lib-imported/libcrispasr-linux-x86_64.tar.gz; \
     fi
 
 # Stage 2: Build Go binary via go generate + go build.
@@ -37,8 +30,10 @@ ARG TARGETARCH
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     cmake \
+    libogg0 \
     libomp5 \
     libopenblas0-pthread \
+    libopus0 \
     && rm -rf /var/lib/apt/lists/*
 
 COPY go.mod go.sum ./
@@ -66,11 +61,11 @@ RUN if [ "$TARGETARCH" = "arm64" ]; then \
 # (e.g. Intel i7-1355U, Raspberry Pi 5).
 RUN set -eu; \
     if [ "$TARGETARCH" = "arm64" ]; then \
-        url="https://github.com/CrispStrobe/CrispASR/archive/refs/tags/v0.8.2.tar.gz"; \
-        member="CrispASR-0.8.2/ggml"; \
+        url="https://github.com/CrispStrobe/CrispASR/archive/refs/tags/v0.8.4.tar.gz"; \
+        member="CrispASR-0.8.4/ggml"; \
     else \
-        url="https://github.com/CrispStrobe/CrispASR/archive/hf-space-bin.tar.gz"; \
-        member="CrispASR-hf-space-bin/ggml"; \
+        url="https://github.com/CrispStrobe/CrispASR/archive/refs/tags/v0.8.4.tar.gz"; \
+        member="CrispASR-0.8.4/ggml"; \
     fi; \
     curl -sL "$url" | tar xzf - --strip-components=1 "$member"; \
     touch ggml/ggml.pc.in; \
@@ -93,8 +88,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     ffmpeg \
     libffi8 \
     libgomp1 \
+    libogg0 \
     libomp5 \
     libopenblas0-pthread \
+    libopus0 \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=build /go-asr-bot /usr/local/bin/go-asr-bot
