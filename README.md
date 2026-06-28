@@ -1,6 +1,6 @@
 # go-asr-bot
 
-Go-based Telegram bot for ASR transcription via **CrispASR** — a C library wrapping 26+ ASR backends (parakeet, canary, whisper, cohere-transcribe, etc.).
+Go-based Telegram bot for ASR transcription via **[CrispASR](https://github.com/CrispStrobe/CrispASR)** — a C library wrapping 26+ ASR backends (parakeet, canary, whisper, cohere-transcribe, etc.).
 
 Built with `github.com/go-telegram-bot-api/telegram-bot-api/v5`.
 
