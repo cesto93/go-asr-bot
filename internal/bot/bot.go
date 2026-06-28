@@ -29,7 +29,7 @@ func New(cfg *config.Config, modelPath, mmprojPath, modelName, backend string) (
 		return nil, err
 	}
 
-	api.Debug = cfg.Debug
+	api.Debug = cfg.Debug()
 	slog.Info("authorized on account", "bot", api.Self.UserName)
 
 	b := &Bot{
@@ -64,7 +64,7 @@ func NewWithoutASR(cfg *config.Config) (*Bot, error) {
 		return nil, err
 	}
 
-	api.Debug = cfg.Debug
+	api.Debug = cfg.Debug()
 	slog.Info("authorized on account", "bot", api.Self.UserName)
 
 	b := &Bot{

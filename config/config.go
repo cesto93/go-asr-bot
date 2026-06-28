@@ -29,7 +29,7 @@ func ModelsDir() string {
 
 type Config struct {
 	TelegramToken string
-	Debug         bool
+	LogLevel      string
 	UserID        int64
 
 	// Language hint for transcription (ISO 639-1, e.g. "en", "fr", "de")
@@ -49,13 +49,13 @@ func Load() *Config {
 	v.SetConfigFile(ConfigPath())
 	v.SetConfigType("yaml")
 
-	v.SetDefault("debug", false)
+	v.SetDefault("log_level", "info")
 	v.SetDefault("user_id", 0)
 	v.SetDefault("language", "")
 	v.SetDefault("default_model", "parakeet-tdt-0.6b-v3-q4_k")
 	v.SetDefault("crispasr_threads", 4)
 
-	v.BindEnv("debug", "DEBUG")
+	v.BindEnv("log_level", "LOG_LEVEL")
 	v.BindEnv("user_id", "USER_ID")
 	v.BindEnv("language", "ASR_LANGUAGE")
 	v.BindEnv("default_model", "ASR_DEFAULT_MODEL")
@@ -66,7 +66,7 @@ func Load() *Config {
 
 	return &Config{
 		TelegramToken:   v.GetString("telegram_token"),
-		Debug:           v.GetBool("debug"),
+		LogLevel:        v.GetString("log_level"),
 		UserID:          v.GetInt64("user_id"),
 		Language:        v.GetString("language"),
 		DefaultModel:    v.GetString("default_model"),
@@ -75,12 +75,16 @@ func Load() *Config {
 	}
 }
 
+func (c *Config) Debug() bool {
+	return c.LogLevel == "debug"
+}
+
 func Save(cfg *Config) error {
 	v := viper.New()
 	v.SetConfigFile(ConfigPath())
 	v.SetConfigType("yaml")
 
-	v.Set("debug", cfg.Debug)
+	v.Set("log_level", cfg.LogLevel)
 	v.Set("user_id", cfg.UserID)
 	v.Set("language", cfg.Language)
 	v.Set("default_model", cfg.DefaultModel)
