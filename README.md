@@ -8,7 +8,6 @@ Built with `github.com/go-telegram-bot-api/telegram-bot-api/v5`.
 
 - Go 1.26+
 - CGO (`CGO_ENABLED=1`)
-- `ffmpeg` at runtime
 - A Telegram bot token from [@BotFather](https://t.me/BotFather)
 
 ## Quick start

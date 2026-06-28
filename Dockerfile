@@ -85,7 +85,6 @@ RUN CGO_ENABLED=1 go build -a -ldflags="-s -w" -o /go-asr-bot .
 FROM debian:trixie-slim
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
-    ffmpeg \
     libffi8 \
     libgomp1 \
     libogg0 \

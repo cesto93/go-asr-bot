@@ -114,7 +114,6 @@ Requires a `.env` file with `TELEGRAM_BOT_TOKEN` set.
 
 ## Runtime dependencies
 
-- **ffmpeg** — audio conversion (ogg/wav → PCM f32le)
 - **libcrispasr.so**, **libggml*.so**, **libopenblas.so.0** — handled by `go generate` or Docker
 
 ## Project structure
