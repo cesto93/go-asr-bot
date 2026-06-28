@@ -37,7 +37,7 @@ Model paths are inferred from the variant name. `Language` and `UserID` hot-relo
 ## CLI commands
 
 | Command | Description |
-|---|---|---|
+| ------- | ----------- |
 | `go run . [--model <name>] [--lang <code>]` | Run the bot (long-polling) |
 | `go run . pull --model <name> [--upgrade] [--model-path <dir>]` | Download a model |
 | `go run . list [--model-path <dir>]` | List downloaded models |
@@ -48,7 +48,7 @@ Model paths are inferred from the variant name. `Language` and `UserID` hot-relo
 ## Telegram bot commands
 
 | Command | Description |
-|---|---|---|
+| ------- | ----------- |
 | `/start` | Start the bot |
 | `/help` | Show available commands |
 | `/status` | Show current model, language, and downloaded models |

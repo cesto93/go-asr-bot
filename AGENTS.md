@@ -34,7 +34,7 @@ Model paths are always inferred from the selected model variant (via `--model` f
 ## Telegram bot commands
 
 | Command | Description |
-|---|---|---|
+| ------- | ----------- |
 | `/start` | Start the bot |
 | `/help` | Show available commands |
 | `/status` | Show current model, language, and downloaded models |
@@ -44,7 +44,7 @@ Model paths are always inferred from the selected model variant (via `--model` f
 ## CLI commands
 
 | Command | Description |
-|---|---|---|
+| ------- | ----------- |
 | `go run . [--model <name>] [--lang <code>]` | Run the bot (long-polling) |
 | `go run . pull --model <name> [--upgrade] [--model-path <dir>]` | Download a model |
 | `go run . list [--model-path <dir>]` | List downloaded models |
