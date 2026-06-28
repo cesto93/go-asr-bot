@@ -2,7 +2,7 @@ package handlers
 
 import (
 	"fmt"
-	"log"
+	"log/slog"
 
 	"github.com/cesto93/go-asr-bot/internal/asr"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
@@ -10,7 +10,7 @@ import (
 
 func (h *Handler) handleVoice(msg *tgbotapi.Message) error {
 	if h.asr == nil {
-		log.Printf("ASR model not available for voice message from chat %d", msg.Chat.ID)
+		slog.Warn("ASR model not available for voice message", "chat", msg.Chat.ID)
 		return h.sendText(msg.Chat.ID, "ASR model not available. Please download a model first using `go run . pull --model <name>`.")
 	}
 
@@ -30,6 +30,8 @@ func (h *Handler) handleVoice(msg *tgbotapi.Message) error {
 	if err != nil {
 		return fmt.Errorf("transcribe: %w", err)
 	}
+
+	slog.Info("voice transcribed", "chat", msg.Chat.ID, "text", text)
 
 	return h.sendText(msg.Chat.ID, text)
 }

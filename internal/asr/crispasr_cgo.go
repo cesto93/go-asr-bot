@@ -34,7 +34,7 @@ import "C"
 
 import (
 	"fmt"
-	"log"
+	"log/slog"
 	"strings"
 	"unsafe"
 )
@@ -72,7 +72,7 @@ func newCrispasr(modelPath string, threads int, lang string) (*crispasrEngine, e
 func (e *crispasrEngine) warmup() {
 	silence := make([]float32, 8000)
 	if _, err := e.Transcribe(silence); err != nil {
-		log.Printf("warmup transcribe failed (non-fatal): %v", err)
+		slog.Warn("warmup transcribe failed (non-fatal)", "err", err)
 	}
 }
 

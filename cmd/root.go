@@ -1,7 +1,7 @@
 package cmd
 
 import (
-	"log"
+	"log/slog"
 	"os"
 	"os/signal"
 	"syscall"
@@ -37,7 +37,8 @@ var rootCmd = &cobra.Command{
 		}
 		v, ok := config.ModelVariants[modelName]
 		if !ok {
-			log.Fatalf("unknown model %q", modelName)
+			slog.Error("unknown model", "name", modelName)
+			os.Exit(1)
 		}
 
 		modelPath := config.ResolveModelPath(v, v.ModelFile)
@@ -48,13 +49,14 @@ var rootCmd = &cobra.Command{
 		backend := v.Backend
 
 		if cfg.TelegramToken == "" {
-			log.Fatal("TELEGRAM_BOT_TOKEN environment variable is not set")
+			slog.Error("TELEGRAM_BOT_TOKEN environment variable is not set")
+			os.Exit(1)
 		}
 
 		if _, err := os.Stat(modelPath); os.IsNotExist(err) {
-			log.Printf("Model file not found at %s — downloading…", modelPath)
+			slog.Info("downloading model", "path", modelPath)
 			if err := config.DownloadModel(modelName); err != nil {
-				log.Printf("WARNING: Failed to download model %s: %v — ASR unavailable", modelName, err)
+				slog.Warn("failed to download model — ASR unavailable", "name", modelName, "err", err)
 				modelPath = ""
 				mmprojPath = ""
 			}
@@ -62,10 +64,11 @@ var rootCmd = &cobra.Command{
 
 		b, err := bot.New(cfg, modelPath, mmprojPath, modelName, backend)
 		if err != nil {
-			log.Printf("WARNING: Failed to create bot: %v — starting without ASR", err)
+			slog.Warn("failed to create bot, starting without ASR", "err", err)
 			b, err = bot.NewWithoutASR(cfg)
 			if err != nil {
-				log.Fatalf("Failed to create bot even without ASR: %v", err)
+				slog.Error("failed to create bot even without ASR", "err", err)
+				os.Exit(1)
 			}
 		}
 
@@ -73,19 +76,21 @@ var rootCmd = &cobra.Command{
 			sig := make(chan os.Signal, 1)
 			signal.Notify(sig, syscall.SIGINT, syscall.SIGTERM)
 			<-sig
-			log.Println("Shutting down...")
+			slog.Info("shutting down")
 			os.Exit(0)
 		}()
 
-		log.Println("Bot started")
+		slog.Info("bot started")
 		if err := b.Run(); err != nil {
-			log.Fatalf("Bot error: %v", err)
+			slog.Error("bot error", "err", err)
+			os.Exit(1)
 		}
 	},
 }
 
 func Execute() {
 	if err := rootCmd.Execute(); err != nil {
-		log.Fatal(err)
+		slog.Error("execute error", "err", err)
+		os.Exit(1)
 	}
 }

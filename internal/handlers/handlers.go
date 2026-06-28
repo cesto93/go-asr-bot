@@ -2,7 +2,7 @@ package handlers
 
 import (
 	"fmt"
-	"log"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"sort"
@@ -119,7 +119,7 @@ func downloadedModels() []string {
 
 	entries, err := os.ReadDir(dir)
 	if err != nil {
-		log.Printf("Failed to read models directory: %v", err)
+		slog.Error("failed to read models directory", "err", err)
 		return nil
 	}
 
@@ -157,7 +157,7 @@ func (h *Handler) handleSetModel(msg *tgbotapi.Message) error {
 	}
 
 	if err := h.server.SetModel(name); err != nil {
-		log.Printf("Failed to change model: %v", err)
+		slog.Error("failed to change model", "err", err)
 		return h.sendText(msg.Chat.ID, fmt.Sprintf("Failed to change model: %v", err))
 	}
 
@@ -173,7 +173,7 @@ func (h *Handler) handleSetLang(msg *tgbotapi.Message) error {
 	}
 
 	if err := h.server.SetLanguage(lang); err != nil {
-		log.Printf("Failed to set language: %v", err)
+		slog.Error("failed to set language", "err", err)
 		return h.sendText(msg.Chat.ID, fmt.Sprintf("Failed to set language: %v", err))
 	}
 

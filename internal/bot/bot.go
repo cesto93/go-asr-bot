@@ -2,7 +2,7 @@ package bot
 
 import (
 	"fmt"
-	"log"
+	"log/slog"
 	"os"
 
 	"github.com/cesto93/go-asr-bot/config"
@@ -30,7 +30,7 @@ func New(cfg *config.Config, modelPath, mmprojPath, modelName, backend string) (
 	}
 
 	api.Debug = cfg.Debug
-	log.Printf("Authorized on account %s", api.Self.UserName)
+	slog.Info("authorized on account", "bot", api.Self.UserName)
 
 	b := &Bot{
 		api:              api,
@@ -52,7 +52,7 @@ func New(cfg *config.Config, modelPath, mmprojPath, modelName, backend string) (
 	b.handlers = handlers.New(api, b.engine, b)
 
 	if err := b.registerCommands(); err != nil {
-		log.Printf("Failed to register commands: %v", err)
+		slog.Error("failed to register commands", "err", err)
 	}
 
 	return b, nil
@@ -65,7 +65,7 @@ func NewWithoutASR(cfg *config.Config) (*Bot, error) {
 	}
 
 	api.Debug = cfg.Debug
-	log.Printf("Authorized on account %s", api.Self.UserName)
+	slog.Info("authorized on account", "bot", api.Self.UserName)
 
 	b := &Bot{
 		api:              api,
@@ -76,7 +76,7 @@ func NewWithoutASR(cfg *config.Config) (*Bot, error) {
 	b.handlers = handlers.New(api, nil, b)
 
 	if err := b.registerCommands(); err != nil {
-		log.Printf("Failed to register commands: %v", err)
+		slog.Error("failed to register commands", "err", err)
 	}
 
 	return b, nil
@@ -84,11 +84,11 @@ func NewWithoutASR(cfg *config.Config) (*Bot, error) {
 
 func (b *Bot) Reload() {
 	cfg := config.Load()
-	log.Printf("Reloading config from %s", config.ConfigPath())
+	slog.Info("reloading config", "path", config.ConfigPath())
 
 	if cfg.Language != "" && b.engine != nil {
 		b.engine.SetLanguage(cfg.Language)
-		log.Printf("Updated language to %q", cfg.Language)
+		slog.Info("updated language", "lang", cfg.Language)
 	}
 
 	b.authorizedUserID = cfg.UserID
@@ -161,6 +161,19 @@ func (b *Bot) registerCommands() error {
 	return err
 }
 
+func messageType(msg *tgbotapi.Message) string {
+	switch {
+	case msg.IsCommand():
+		return "command:" + msg.Command()
+	case msg.Voice != nil:
+		return "voice"
+	case msg.Text != "":
+		return "text"
+	default:
+		return "unknown"
+	}
+}
+
 func (b *Bot) Run() error {
 	config.Watch(func(cfg *config.Config) {
 		b.Reload()
@@ -176,8 +189,12 @@ func (b *Bot) Run() error {
 			if b.authorizedUserID != 0 && update.Message.From.ID != b.authorizedUserID {
 				continue
 			}
+			slog.Info("message received",
+				"user", update.Message.From.UserName,
+				"chat", update.Message.Chat.ID,
+				"type", messageType(update.Message))
 			if err := b.handlers.HandleMessage(update.Message); err != nil {
-				log.Printf("Error handling message: %v", err)
+				slog.Error("error handling message", "err", err)
 				b.api.Send(tgbotapi.NewMessage(update.Message.Chat.ID, fmt.Sprintf("Error: %v", err)))
 			}
 		}

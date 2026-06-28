@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
-	"log"
+	"log/slog"
 	"os"
 	"os/exec"
 )
@@ -17,7 +17,7 @@ func AudioToPCM(audioPath string, sampleRate int) ([]float32, error) {
 		if err == nil {
 			return pcm, nil
 		}
-		log.Printf("crispasr_audio_load (%s): %v; falling back to ffmpeg", audioPath, err)
+		slog.Warn("crispasr_audio_load failed, falling back to ffmpeg", "path", audioPath, "err", err)
 	}
 
 	return audioToPCMFFmpeg(audioPath, sampleRate)
@@ -42,7 +42,7 @@ func AudioToPCMBytes(data []byte, sampleRate int) ([]float32, error) {
 		if err == nil {
 			return pcm, nil
 		}
-		log.Printf("crispasr_audio_load (%s): %v; falling back to ffmpeg", tmpPath, err)
+		slog.Warn("crispasr_audio_load failed, falling back to ffmpeg", "path", tmpPath, "err", err)
 	}
 
 	return audioToPCMFFmpegBytes(data, sampleRate)
