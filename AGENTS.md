@@ -110,9 +110,6 @@ ARM64 variant:
 ```bash
 docker compose -f docker-compose.arm64.yml up -d
 ```
-
-Podman variants also available (`podman-compose.yml`, `podman-compose.arm64.yml`).
-
 Requires a `.env` file with `TELEGRAM_BOT_TOKEN` set.
 
 ## Runtime dependencies

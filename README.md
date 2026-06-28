@@ -80,9 +80,6 @@ ARM64 variant:
 ```bash
 docker compose -f docker-compose.arm64.yml up -d
 ```
-
-Podman variants also available (`podman-compose.yml`, `podman-compose.arm64.yml`).
-
 Requires a `.env` file with `TELEGRAM_BOT_TOKEN`.
 
 The Dockerfile rebuilds ggml from source without AVX-512 to avoid SIGILL on CPUs lacking AVX-512 support (e.g. Intel i7-1355U).

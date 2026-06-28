@@ -1,26 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-usage() {
-    echo "Usage: $0 [--podman|--docker]"
-    exit 1
-}
-
-RUNTIME=
-COMPOSE_CMD=
-while [[ $# -gt 0 ]]; do
-    case "$1" in
-        --podman) RUNTIME=podman; COMPOSE_CMD="podman-compose" ;;
-        --docker) RUNTIME=docker; COMPOSE_CMD="docker compose" ;;
-        *) usage ;;
-    esac
-    shift
-done
-
-if [[ -z "$RUNTIME" ]]; then
-    usage
-fi
-
 ARCH=$(uname -m)
 case "$ARCH" in
     x86_64)  ARCH_SUFFIX= ;;
@@ -31,7 +11,7 @@ case "$ARCH" in
         ;;
 esac
 
-COMPOSE_FILE="${RUNTIME}-compose${ARCH_SUFFIX}.yml"
+COMPOSE_FILE="docker-compose${ARCH_SUFFIX}.yml"
 
 if [[ ! -f "$COMPOSE_FILE" ]]; then
     echo "Compose file not found: $COMPOSE_FILE"
@@ -39,17 +19,4 @@ if [[ ! -f "$COMPOSE_FILE" ]]; then
 fi
 
 echo "Using $COMPOSE_FILE"
-
-if [[ "$RUNTIME" == "podman" ]]; then
-    SERVICE_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/systemd/user"
-    SERVICE_FILE="$SERVICE_DIR/podman-compose-go-asr-bot.service"
-
-    if [[ -f "$SERVICE_FILE" ]]; then
-        systemctl --user disable --now podman-compose-go-asr-bot.service || true
-        rm -f "$SERVICE_FILE"
-        systemctl --user daemon-reload
-        echo "Systemd user service removed."
-    fi
-fi
-
-$COMPOSE_CMD -f "$COMPOSE_FILE" down
+docker compose -f "$COMPOSE_FILE" down
