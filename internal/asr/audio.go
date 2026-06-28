@@ -4,11 +4,51 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
+	"log"
 	"os"
 	"os/exec"
 )
 
+var crispASRLoad func(path string) ([]float32, error)
+
 func AudioToPCM(audioPath string, sampleRate int) ([]float32, error) {
+	if crispASRLoad != nil {
+		pcm, err := crispASRLoad(audioPath)
+		if err == nil {
+			return pcm, nil
+		}
+		log.Printf("crispasr_audio_load (%s): %v; falling back to ffmpeg", audioPath, err)
+	}
+
+	return audioToPCMFFmpeg(audioPath, sampleRate)
+}
+
+func AudioToPCMBytes(data []byte, sampleRate int) ([]float32, error) {
+	if crispASRLoad != nil {
+		f, err := os.CreateTemp("", "asr-*.opus")
+		if err != nil {
+			return nil, fmt.Errorf("create temp file: %w", err)
+		}
+		tmpPath := f.Name()
+		if _, err := f.Write(data); err != nil {
+			f.Close()
+			os.Remove(tmpPath)
+			return nil, fmt.Errorf("write temp file: %w", err)
+		}
+		f.Close()
+		defer os.Remove(tmpPath)
+
+		pcm, err := crispASRLoad(tmpPath)
+		if err == nil {
+			return pcm, nil
+		}
+		log.Printf("crispasr_audio_load (%s): %v; falling back to ffmpeg", tmpPath, err)
+	}
+
+	return audioToPCMFFmpegBytes(data, sampleRate)
+}
+
+func audioToPCMFFmpeg(audioPath string, sampleRate int) ([]float32, error) {
 	pcmPath := audioPath + ".pcm"
 	cmd := exec.Command("ffmpeg",
 		"-y",
@@ -31,7 +71,7 @@ func AudioToPCM(audioPath string, sampleRate int) ([]float32, error) {
 	return bytesToF32(data)
 }
 
-func AudioToPCMBytes(data []byte, sampleRate int) ([]float32, error) {
+func audioToPCMFFmpegBytes(data []byte, sampleRate int) ([]float32, error) {
 	var stdout, stderr bytes.Buffer
 	cmd := exec.Command("ffmpeg",
 		"-y",

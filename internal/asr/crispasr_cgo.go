@@ -25,6 +25,10 @@ int crispasr_session_set_max_new_tokens(CrispasrSession* s, int max_new_tokens);
 int crispasr_session_set_temperature(CrispasrSession* s, float temperature, unsigned long long seed);
 int crispasr_session_set_source_language(CrispasrSession* s, const char* lang);
 crispasr_session_result* crispasr_session_transcribe_lang(CrispasrSession* s, const float* pcm, int n_samples, const char* language);
+
+// Audio file loading (miniaudio + opusfile, no ffmpeg needed)
+int  crispasr_audio_load(const char* path, float** out_pcm, int* out_samples, int* out_sample_rate);
+void crispasr_audio_free(float* pcm);
 */
 import "C"
 
@@ -136,7 +140,28 @@ func (e *crispasrEngine) TranscribeLang(pcm []float32, lang string) (string, err
 	return strings.Join(texts, " "), nil
 }
 
+func loadAudioWithCrispASR(path string) ([]float32, error) {
+	cpath := C.CString(path)
+	defer C.free(unsafe.Pointer(cpath))
+
+	var outPcm *C.float
+	var outSamples, outSampleRate C.int
+
+	ret := C.crispasr_audio_load(cpath, &outPcm, &outSamples, &outSampleRate)
+	if ret != 0 {
+		return nil, fmt.Errorf("crispasr_audio_load: error %d", ret)
+	}
+	defer C.crispasr_audio_free(outPcm)
+
+	n := int(outSamples)
+	samples := unsafe.Slice((*float32)(unsafe.Pointer(outPcm)), n)
+	result := make([]float32, n)
+	copy(result, samples)
+	return result, nil
+}
+
 func init() {
+	crispASRLoad = loadAudioWithCrispASR
 	backends["crispasr"] = func(modelPath string, threads int, lang string) (Engine, error) {
 		return newCrispasr(modelPath, threads, lang)
 	}
