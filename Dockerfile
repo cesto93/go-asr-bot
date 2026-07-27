@@ -1,4 +1,4 @@
-ARG CRISPASR_VERSION=v0.8.4
+ARG CRISPASR_VERSION=v0.8.23
 ARG TARGETARCH=amd64
 
 # Stage 1: Download pre-built CrispASR libraries and package into the

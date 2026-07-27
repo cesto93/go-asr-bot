@@ -3,7 +3,6 @@ set -eu
 
 . "$(dirname "$0")/crispasr-version.sh"
 
-CRISPASR_VERSION_NO_V="${CRISPASR_VERSION#v}"
 TARGETARCH="${TARGETARCH:-amd64}"
 
 case "$TARGETARCH" in
@@ -40,10 +39,8 @@ mkdir -p "$BUILD_DIR/src" "$BUILD_DIR/ggml/src"
 TMPDIR="$(mktemp -d)"
 tar xzf "$TARBALL" -C "$TMPDIR"
 
-cp -a "$TMPDIR/libcrispasr-linux-${ARCH_TAR}/src/"* "$BUILD_DIR/src/"
-cp -a "$TMPDIR/libcrispasr-linux-${ARCH_TAR}/ggml/src/"* "$BUILD_DIR/ggml/src/"
-
-cp -a "$BUILD_DIR/ggml/src/"*.so* "$BUILD_DIR/src/"
+cp -a "$TMPDIR/libcrispasr-linux-${ARCH_TAR}/lib/"* "$BUILD_DIR/src/"
+cp -a "$BUILD_DIR/src/"libggml*.so* "$BUILD_DIR/ggml/src/"
 
 rm -rf "$TMPDIR"
 
@@ -62,23 +59,31 @@ fi
 # contain instructions that cause SIGILL on CPUs without those extensions
 # (e.g. Intel i7-1355U, Raspberry Pi 5).
 if command -v cmake >/dev/null 2>&1 && command -v curl >/dev/null 2>&1; then
-	echo "Rebuilding ggml from source (GGML_NATIVE=OFF)..."
-	GGML_SRC="$(mktemp -d)"
-	curl -sL "https://github.com/CrispStrobe/CrispASR/archive/refs/tags/${CRISPASR_VERSION}.tar.gz" \
-		| tar xzf - --strip-components=1 -C "$GGML_SRC" "CrispASR-${CRISPASR_VERSION_NO_V}/ggml"
-	touch "$GGML_SRC/ggml/ggml.pc.in"
-	GGML_BUILD="$(mktemp -d)"
-	cmake -B "$GGML_BUILD" -S "$GGML_SRC/ggml" \
-		-DBUILD_SHARED_LIBS=ON \
-		-DGGML_NATIVE=OFF \
-		-DGGML_OPENMP=ON \
-		-DGGML_BUILD_TESTS=OFF \
-		-DGGML_BUILD_EXAMPLES=OFF
-	cmake --build "$GGML_BUILD" -j "$(nproc)" --target ggml ggml-base ggml-cpu
-	cp -a "$GGML_BUILD/src/"libggml*.so* "$BUILD_DIR/ggml/src/"
-	cp -a "$GGML_BUILD/src/"libggml*.so* "$BUILD_DIR/src/"
-	rm -rf "$GGML_SRC" "$GGML_BUILD"
-	echo "ggml rebuilt successfully"
+	echo "Resolving ggml submodule commit from CrispASR ${CRISPASR_VERSION}..."
+	GGML_COMMIT="$(curl -sL "https://api.github.com/repos/CrispStrobe/CrispASR/git/trees/${CRISPASR_VERSION}" \
+		| grep -A3 '"path": "ggml"' | grep '"sha"' | head -1 | cut -d'"' -f4)"
+	if [ -z "$GGML_COMMIT" ]; then
+		echo "WARNING: could not resolve ggml submodule commit from GitHub API."
+		echo "Using pre-built ggml libraries from the CrispASR tarball."
+	else
+		echo "ggml submodule commit: ${GGML_COMMIT}"
+		echo "Rebuilding ggml from source (GGML_NATIVE=OFF)..."
+		GGML_SRC="$(mktemp -d)"
+		curl -sL "https://github.com/CrispStrobe/ggml/archive/${GGML_COMMIT}.tar.gz" \
+			| tar xzf - --strip-components=1 -C "$GGML_SRC"
+		GGML_BUILD="$(mktemp -d)"
+		cmake -B "$GGML_BUILD" -S "$GGML_SRC" \
+			-DBUILD_SHARED_LIBS=ON \
+			-DGGML_NATIVE=OFF \
+			-DGGML_OPENMP=ON \
+			-DGGML_BUILD_TESTS=OFF \
+			-DGGML_BUILD_EXAMPLES=OFF
+		cmake --build "$GGML_BUILD" -j "$(nproc)" --target ggml ggml-base ggml-cpu
+		cp -a "$GGML_BUILD/src/"libggml*.so* "$BUILD_DIR/ggml/src/"
+		cp -a "$GGML_BUILD/src/"libggml*.so* "$BUILD_DIR/src/"
+		rm -rf "$GGML_SRC" "$GGML_BUILD"
+		echo "ggml rebuilt successfully"
+	fi
 else
 	echo "WARNING: cmake or curl not found; using pre-built ggml libraries."
 	echo "If you encounter SIGILL, install cmake+curl and re-run, or use Docker."

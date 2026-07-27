@@ -82,6 +82,8 @@ The CrispASR version is defined in a single source: `scripts/crispasr-version.sh
 
 The build script handles both amd64 and arm64 via the `TARGETARCH` environment variable (defaults to `amd64`).
 
+The ggml submodule commit is resolved automatically at build time from the CrispASR GitHub API (`/git/trees/{tag}`), so updating `CRISPASR_VERSION` alone is sufficient. If the API call fails, the script falls back to the pre-built ggml libraries from the CrispASR tarball (skipping the SIGILL-safe rebuild).
+
 ## Docker
 
 ### AVX-512 SIGILL fix
