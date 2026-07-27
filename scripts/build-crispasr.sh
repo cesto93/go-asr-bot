@@ -8,16 +8,16 @@ TARGETARCH="${TARGETARCH:-amd64}"
 
 case "$TARGETARCH" in
     amd64)
-        ARCH_SUFFIX="x86_64"
+        ARCH_TAR="x86_64"
+        ARCH_TRIPLE="x86_64-linux-gnu"
         OPENBLAS_DEB="libopenblas0-pthread_0.3.26+ds-1ubuntu0.1_amd64.deb"
         OPENBLAS_URL="http://archive.ubuntu.com/ubuntu/pool/universe/o/openblas/$OPENBLAS_DEB"
-        OPENBLAS_LIBDIR="x86_64-linux-gnu/openblas-pthread"
         ;;
     arm64)
-        ARCH_SUFFIX="aarch64"
+        ARCH_TAR="arm64"
+        ARCH_TRIPLE="aarch64-linux-gnu"
         OPENBLAS_DEB="libopenblas0-pthread_0.3.26+ds-1ubuntu0.1_arm64.deb"
         OPENBLAS_URL="http://ports.ubuntu.com/ubuntu-ports/pool/universe/o/openblas/$OPENBLAS_DEB"
-        OPENBLAS_LIBDIR="aarch64-linux-gnu/openblas-pthread"
         ;;
     *)
         echo "ERROR: unsupported TARGETARCH=$TARGETARCH"
@@ -25,12 +25,12 @@ case "$TARGETARCH" in
         ;;
 esac
 
-TARBALL="../../lib-imported/libcrispasr-linux-${ARCH_SUFFIX}.tar.gz"
+TARBALL="../../lib-imported/libcrispasr-linux-${ARCH_TAR}.tar.gz"
 BUILD_DIR="../../lib/crispasr/build"
 
 if [ ! -f "$TARBALL" ]; then
 	echo "ERROR: Pre-built CrispASR tarball not found at $TARBALL"
-	echo "Download from: https://github.com/CrispStrobe/CrispASR/releases/download/${CRISPASR_VERSION}/libcrispasr-linux-${ARCH_SUFFIX}.tar.gz"
+	echo "Download from: https://github.com/CrispStrobe/CrispASR/releases/download/${CRISPASR_VERSION}/libcrispasr-linux-${ARCH_TAR}.tar.gz"
 	echo "and place it in lib-imported/"
 	exit 1
 fi
@@ -40,8 +40,8 @@ mkdir -p "$BUILD_DIR/src" "$BUILD_DIR/ggml/src"
 TMPDIR="$(mktemp -d)"
 tar xzf "$TARBALL" -C "$TMPDIR"
 
-cp -a "$TMPDIR/libcrispasr-linux-${ARCH_SUFFIX}/src/"* "$BUILD_DIR/src/"
-cp -a "$TMPDIR/libcrispasr-linux-${ARCH_SUFFIX}/ggml/src/"* "$BUILD_DIR/ggml/src/"
+cp -a "$TMPDIR/libcrispasr-linux-${ARCH_TAR}/src/"* "$BUILD_DIR/src/"
+cp -a "$TMPDIR/libcrispasr-linux-${ARCH_TAR}/ggml/src/"* "$BUILD_DIR/ggml/src/"
 
 cp -a "$BUILD_DIR/ggml/src/"*.so* "$BUILD_DIR/src/"
 
@@ -53,7 +53,7 @@ if ! ldconfig -p | grep -qF 'libopenblas.so.0'; then
 	OPENBLAS_DIR="$(mktemp -d)"
 	wget -q -O "$OPENBLAS_DIR/pkg.deb" "$OPENBLAS_URL"
 	dpkg-deb -x "$OPENBLAS_DIR/pkg.deb" "$OPENBLAS_DIR"
-	cp -a "$OPENBLAS_DIR/usr/lib/${OPENBLAS_LIBDIR}/"libopenblas*.so* "$BUILD_DIR/src/"
+	cp -a "$OPENBLAS_DIR/usr/lib/${ARCH_TRIPLE}/openblas-pthread/"libopenblas*.so* "$BUILD_DIR/src/"
 	rm -rf "$OPENBLAS_DIR"
 fi
 
