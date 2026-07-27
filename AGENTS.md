@@ -69,7 +69,7 @@ go run . list
 
 ## Build CrispASR C library
 
-The CrispASR C library is pulled as a pre-built binary from GitHub releases. `go generate` downloads and extracts it:
+The CrispASR C library is pulled as a pre-built binary from GitHub releases. `go generate` extracts it and rebuilds ggml:
 
 ```bash
 CGO_ENABLED=1 go generate ./internal/asr/
@@ -78,7 +78,9 @@ go build .
 
 The pre-built tarball is cached in `lib-imported/` — no CMake or submodule needed.
 
-Note: `go generate` handles the amd64 build. ARM64 builds require Docker or `scripts/build-crispasr-arm64.sh`.
+The CrispASR version is defined in a single source: `scripts/crispasr-version.sh`. Both `scripts/build-crispasr.sh` and the Dockerfile `ARG CRISPASR_VERSION` draw from this.
+
+The build script handles both amd64 and arm64 via the `TARGETARCH` environment variable (defaults to `amd64`).
 
 ## Docker
 
@@ -86,11 +88,11 @@ Note: `go generate` handles the amd64 build. ARM64 builds require Docker or `scr
 
 The pre-built `libggml*.so*` files bundled with CrispASR contain AVX-512 instructions that cause SIGILL on CPUs without AVX-512 support (e.g. Intel i7-1355U).
 
-The Dockerfile works around this by rebuilding ggml from the CrispASR vendored source (in `ggml-build` stage) with `-DGGML_NATIVE=OFF` (AVX-512 defaults to OFF). The resulting .so files replace the pre-built ones before the Go binary is linked.
+The build script (`scripts/build-crispasr.sh`) works around this by rebuilding ggml from the CrispASR vendored source with `-DGGML_NATIVE=OFF` (AVX-512 defaults to OFF). The resulting .so files replace the pre-built ones before the Go binary is linked.
 
 ### ARM64
 
-The Dockerfile supports `TARGETARCH=arm64` for ARM64 builds. Pre-built ARM64 binaries are downloaded from a separate CrispASR release URL. Build with:
+The build script supports `TARGETARCH=arm64` for ARM64 builds. Pre-built ARM64 binaries are downloaded from a separate CrispASR release URL. Build with:
 
 ```bash
 make docker-build-arm64
@@ -98,7 +100,12 @@ make docker-build-arm64
 docker build --build-arg TARGETARCH=arm64 -t go-asr-bot:latest-arm64 .
 ```
 
-`scripts/build-crispasr-arm64.sh` handles the ARM64 CrispASR build outside Docker.
+For native ARM64 builds outside Docker, set `TARGETARCH=arm64`:
+
+```bash
+TARGETARCH=arm64 go generate ./internal/asr/
+go build .
+```
 
 ### Docker Compose
 

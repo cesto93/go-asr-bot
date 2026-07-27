@@ -1,3 +1,4 @@
+ARG CRISPASR_VERSION=v0.8.4
 ARG TARGETARCH=amd64
 
 # Stage 1: Download pre-built CrispASR libraries and package into the
@@ -10,15 +11,15 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
+ARG CRISPASR_VERSION
 ARG TARGETARCH
 RUN set -eu; \
+    mkdir -p lib-imported; \
     if [ "$TARGETARCH" = "arm64" ]; then \
-        url="https://github.com/CrispStrobe/CrispASR/releases/download/v0.8.4/libcrispasr-linux-arm64.tar.gz"; \
-        mkdir -p lib-imported; \
+        url="https://github.com/CrispStrobe/CrispASR/releases/download/${CRISPASR_VERSION}/libcrispasr-linux-arm64.tar.gz"; \
         curl -sL "$url" -o lib-imported/libcrispasr-linux-arm64.tar.gz; \
     else \
-        url="https://github.com/CrispStrobe/CrispASR/releases/download/v0.8.4/libcrispasr-linux-x86_64.tar.gz"; \
-        mkdir -p lib-imported; \
+        url="https://github.com/CrispStrobe/CrispASR/releases/download/${CRISPASR_VERSION}/libcrispasr-linux-x86_64.tar.gz"; \
         curl -sL "$url" -o lib-imported/libcrispasr-linux-x86_64.tar.gz; \
     fi
 
@@ -47,37 +48,9 @@ COPY scripts/ scripts/
 
 COPY --from=crispasr-download /src/lib-imported/ lib-imported/
 
-# Extract CrispASR libraries (arch-specific script).
+# Extract CrispASR libraries and rebuild ggml from source (avoids AVX-512/SVE SIGILL).
 # Run from internal/asr/ so ../../ relative paths resolve to repo root.
-RUN if [ "$TARGETARCH" = "arm64" ]; then \
-        cd internal/asr && sh ../../scripts/build-crispasr-arm64.sh; \
-    else \
-        cd internal/asr && sh ../../scripts/build-crispasr.sh; \
-    fi
-
-# Rebuild ggml from source without CPU-specific optimizations (e.g. AVX-512 on
-# amd64, SVE on arm64). The pre-built libggml*.so* in the CrispASR tarball
-# contain instructions that cause SIGILL on CPUs without those extensions
-# (e.g. Intel i7-1355U, Raspberry Pi 5).
-RUN set -eu; \
-    if [ "$TARGETARCH" = "arm64" ]; then \
-        url="https://github.com/CrispStrobe/CrispASR/archive/refs/tags/v0.8.4.tar.gz"; \
-        member="CrispASR-0.8.4/ggml"; \
-    else \
-        url="https://github.com/CrispStrobe/CrispASR/archive/refs/tags/v0.8.4.tar.gz"; \
-        member="CrispASR-0.8.4/ggml"; \
-    fi; \
-    curl -sL "$url" | tar xzf - --strip-components=1 "$member"; \
-    touch ggml/ggml.pc.in; \
-    cmake -B ggml-build -S ggml \
-        -DBUILD_SHARED_LIBS=ON \
-        -DGGML_NATIVE=OFF \
-        -DGGML_OPENMP=ON \
-        -DGGML_BUILD_TESTS=OFF \
-        -DGGML_BUILD_EXAMPLES=OFF; \
-    cmake --build ggml-build -j "$(nproc)" --target ggml ggml-base ggml-cpu; \
-    cp -a ggml-build/src/libggml*.so* lib/crispasr/build/ggml/src/; \
-    cp -a ggml-build/src/libggml*.so* lib/crispasr/build/src/
+RUN cd internal/asr && TARGETARCH=$TARGETARCH sh ../../scripts/build-crispasr.sh
 
 RUN CGO_ENABLED=1 go build -a -ldflags="-s -w" -o /go-asr-bot .
 

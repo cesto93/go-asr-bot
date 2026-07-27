@@ -100,7 +100,7 @@ CGO_ENABLED=1 go build .
 
 The pre-built CrispASR tarball is downloaded by `go generate` and cached in `lib-imported/`.
 
-Note: `go generate` handles the amd64 build. ARM64 builds require Docker or `scripts/build-crispasr-arm64.sh`.
+The build script handles both amd64 and arm64 via the `TARGETARCH` environment variable (defaults to `amd64`).
 
 ## Project structure
 
