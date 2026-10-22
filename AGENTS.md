@@ -76,9 +76,13 @@ CGO_ENABLED=1 go generate ./internal/asr/
 go build .
 ```
 
-The pre-built tarball is cached in `lib-imported/` — no CMake or submodule needed.
+The pre-built tarball is cached in `lib-imported/` — no CMake or submodule needed. Download it first (`libcrispasr-linux-x86_64.tar.gz` or `libcrispasr-linux-arm64.tar.gz`) and place it in `lib-imported/`; the script aborts with the exact URL if it is missing.
 
-The CrispASR version is defined in a single source: `scripts/crispasr-version.sh`. Both `scripts/build-crispasr.sh` and the Dockerfile `ARG CRISPASR_VERSION` draw from this.
+The CrispASR version is defined in `scripts/crispasr-version.sh`, which `scripts/build-crispasr.sh` sources. The Dockerfile also has its own default (`ARG CRISPASR_VERSION`) and must be bumped in the same commit.
+
+Since v0.8.44 the release tarball ships `crispasr_session.h` alongside `crispasr.h`. The CGO bridge still declares the session prototypes inline (`internal/asr/crispasr_cgo.go`), so copying headers is not part of the flow.
+
+Note: `crispasr_audio_load` (the C ABI path used by the bot) still resamples with miniaudio's linear interpolator. The polyphase resampler added in v0.8.30 is only wired into the CLI's `read_audio_data()`; `crispasr_audio_resample()` is available to callers that need it.
 
 The build script handles both amd64 and arm64 via the `TARGETARCH` environment variable (defaults to `amd64`).
 
