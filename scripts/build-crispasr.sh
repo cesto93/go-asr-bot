@@ -58,31 +58,24 @@ fi
 # amd64, SVE on arm64). The pre-built libggml*.so* in the CrispASR tarball
 # contain instructions that cause SIGILL on CPUs without those extensions
 # (e.g. Intel i7-1355U, Raspberry Pi 5).
-if command -v cmake >/dev/null 2>&1 && command -v curl >/dev/null 2>&1; then
-	echo "Resolving ggml submodule commit from CrispASR ${CRISPASR_VERSION}..."
-	GGML_COMMIT="$(curl -sL "https://api.github.com/repos/CrispStrobe/CrispASR/git/trees/${CRISPASR_VERSION}" \
-		| grep -A3 '"path": "ggml"' | grep '"sha"' | head -1 | cut -d'"' -f4)"
-	if [ -z "$GGML_COMMIT" ]; then
-		echo "WARNING: could not resolve ggml submodule commit from GitHub API."
-		echo "Using pre-built ggml libraries from the CrispASR tarball."
+#
+# GGML_PREBUILT_DIR points to a directory already containing the sanitized
+# libraries (built by scripts/build-ggml.sh). The Docker build sets it so the
+# expensive cmake step lives in its own cacheable stage.
+if [ -n "${GGML_PREBUILT_DIR:-}" ]; then
+	if ! ls "$GGML_PREBUILT_DIR/"libggml*.so* >/dev/null 2>&1; then
+		echo "ERROR: GGML_PREBUILT_DIR=$GGML_PREBUILT_DIR does not contain libggml*.so*"
+		exit 1
+	fi
+	echo "Using pre-built ggml libraries from ${GGML_PREBUILT_DIR}..."
+	cp -a "$GGML_PREBUILT_DIR/"libggml*.so* "$BUILD_DIR/ggml/src/"
+	cp -a "$GGML_PREBUILT_DIR/"libggml*.so* "$BUILD_DIR/src/"
+elif command -v cmake >/dev/null 2>&1 && command -v curl >/dev/null 2>&1; then
+	if sh "$(dirname "$0")/build-ggml.sh" "$BUILD_DIR/ggml/src"; then
+		cp -a "$BUILD_DIR/ggml/src/"libggml*.so* "$BUILD_DIR/src/"
 	else
-		echo "ggml submodule commit: ${GGML_COMMIT}"
-		echo "Rebuilding ggml from source (GGML_NATIVE=OFF)..."
-		GGML_SRC="$(mktemp -d)"
-		curl -sL "https://github.com/CrispStrobe/ggml/archive/${GGML_COMMIT}.tar.gz" \
-			| tar xzf - --strip-components=1 -C "$GGML_SRC"
-		GGML_BUILD="$(mktemp -d)"
-		cmake -B "$GGML_BUILD" -S "$GGML_SRC" \
-			-DBUILD_SHARED_LIBS=ON \
-			-DGGML_NATIVE=OFF \
-			-DGGML_OPENMP=ON \
-			-DGGML_BUILD_TESTS=OFF \
-			-DGGML_BUILD_EXAMPLES=OFF
-		cmake --build "$GGML_BUILD" -j "$(nproc)" --target ggml ggml-base ggml-cpu
-		cp -a "$GGML_BUILD/src/"libggml*.so* "$BUILD_DIR/ggml/src/"
-		cp -a "$GGML_BUILD/src/"libggml*.so* "$BUILD_DIR/src/"
-		rm -rf "$GGML_SRC" "$GGML_BUILD"
-		echo "ggml rebuilt successfully"
+		echo "WARNING: ggml rebuild failed."
+		echo "Using pre-built ggml libraries from the CrispASR tarball."
 	fi
 else
 	echo "WARNING: cmake or curl not found; using pre-built ggml libraries."

@@ -88,6 +88,8 @@ The build script handles both amd64 and arm64 via the `TARGETARCH` environment v
 
 The ggml submodule commit is resolved automatically at build time from the CrispASR GitHub API (`/git/trees/{tag}`), so updating `CRISPASR_VERSION` alone is sufficient. If the API call fails, the script falls back to the pre-built ggml libraries from the CrispASR tarball (skipping the SIGILL-safe rebuild).
 
+The ggml rebuild itself lives in `scripts/build-ggml.sh` (usage: `build-ggml.sh <output-dir>`; `CRISPASR_VERSION` is taken from the environment when set, otherwise from `scripts/crispasr-version.sh`). `build-crispasr.sh` calls it unless `GGML_PREBUILT_DIR` points to an existing sanitized build, in which case those libraries are used verbatim (the Docker build relies on this).
+
 ## Docker
 
 ### AVX-512 SIGILL fix
@@ -96,9 +98,13 @@ The pre-built `libggml*.so*` files bundled with CrispASR contain AVX-512 instruc
 
 The build script (`scripts/build-crispasr.sh`) works around this by rebuilding ggml from the CrispASR vendored source with `-DGGML_NATIVE=OFF` (AVX-512 defaults to OFF). The resulting .so files replace the pre-built ones before the Go binary is linked.
 
+In the Dockerfile the rebuild happens in its own `ggml-build` stage, which only depends on `scripts/build-ggml.sh`, `scripts/crispasr-version.sh` and `ARG CRISPASR_VERSION`. Go source changes therefore never invalidate the cmake layer. The `build` stage consumes it through `GGML_PREBUILT_DIR=/ggml` and no longer installs cmake.
+
 ### Multi-arch CI
 
 A single workflow (`.github/workflows/docker.yml`) builds both `linux/amd64` and `linux/arm64` platforms and publishes a multi-arch manifest. The same tags (`latest`, `<sha>`) work on both architectures — Docker selects the right variant at pull time.
+
+Each platform runs on a native runner (`ubuntu-latest` for amd64, `ubuntu-24.04-arm` for arm64, free for public repos), so no QEMU emulation is involved. The matrix carries `platform`/`runner`/`arch` per entry; cache scopes are per arch. Do not reintroduce `docker/setup-qemu-action` unless a runner is switched back to an x86 host.
 
 ### ARM64
 

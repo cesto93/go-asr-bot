@@ -23,14 +23,33 @@ RUN set -eu; \
         curl -sL "$url" -o lib-imported/libcrispasr-linux-x86_64.tar.gz; \
     fi
 
-# Stage 2: Build Go binary via go generate + go build.
+# Stage 2: Rebuild ggml from source without CPU-specific optimizations
+# (avoids AVX-512/SVE SIGILL). This stage depends only on the build scripts and
+# CRISPASR_VERSION, so Go source changes never invalidate the cmake build.
+FROM golang:1.26 AS ggml-build
+WORKDIR /src
+
+ARG CRISPASR_VERSION
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates \
+    cmake \
+    curl \
+    g++ \
+    make \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY scripts/crispasr-version.sh scripts/build-ggml.sh scripts/
+
+RUN CRISPASR_VERSION=$CRISPASR_VERSION sh scripts/build-ggml.sh /ggml
+
+# Stage 3: Build Go binary via go generate + go build.
 FROM golang:1.26 AS build
 WORKDIR /src
 
 ARG TARGETARCH
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    cmake \
     libogg0 \
     libomp5 \
     libopenblas0-pthread \
@@ -47,14 +66,15 @@ COPY main.go .
 COPY scripts/ scripts/
 
 COPY --from=crispasr-download /src/lib-imported/ lib-imported/
+COPY --from=ggml-build /ggml/ /ggml/
 
-# Extract CrispASR libraries and rebuild ggml from source (avoids AVX-512/SVE SIGILL).
+# Extract CrispASR libraries and link the sanitized ggml build from stage 2.
 # Run from internal/asr/ so ../../ relative paths resolve to repo root.
-RUN cd internal/asr && TARGETARCH=$TARGETARCH sh ../../scripts/build-crispasr.sh
+RUN cd internal/asr && TARGETARCH=$TARGETARCH GGML_PREBUILT_DIR=/ggml sh ../../scripts/build-crispasr.sh
 
 RUN CGO_ENABLED=1 go build -a -ldflags="-s -w" -o /go-asr-bot .
 
-# Stage 3: Runtime image
+# Stage 4: Runtime image
 FROM debian:trixie-slim
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
