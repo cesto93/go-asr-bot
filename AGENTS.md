@@ -132,14 +132,15 @@ go build .
 Or manually:
 
 ```bash
-TARGETARCH=amd64 docker compose build   # amd64
-TARGETARCH=arm64 docker compose build   # arm64
+docker compose pull
 docker compose up -d
 ```
 
 Requires a `.env` file with `TELEGRAM_BOT_TOKEN` set.
 
-`scripts/install.sh` auto-detects the host architecture and builds locally (does not pull from GHCR), ensuring the image matches the platform.
+Data lives in named volumes, never in the project directory: `asr-data` is mounted at `/opt/go-asr-bot` (config.yaml) and `asr-models` at `/opt/go-asr-bot/models`. Do not bind-mount the repository at `/opt/go-asr-bot`: if that host directory is deleted or replaced (e.g. `rm -rf` + re-clone) while the container keeps running, the bind mount is orphaned and every path below it fails with `ENOENT` (`mkdir /opt/go-asr-bot/models: no such file or directory`). The container then has to be recreated with `docker compose up -d --force-recreate`.
+
+`scripts/install.sh` pulls the published multi-arch image from GHCR (it does not build locally).
 
 ## Runtime dependencies
 
@@ -183,7 +184,8 @@ Each model variant lives in its own subdirectory named after the model `.gguf` f
 
 ## Notes
 
-- Model download uses `net/http` directly (`http.Get` + `io.Copy`), writing files to `MODELS_DIR/<model-file>/<model-file>`.
+- Model download uses `net/http` directly (`http.Get` + `io.Copy`), writing files to `MODELS_DIR/<model-file>/<model-file>`. The file is written to `<name>.part` and renamed on success, so an interrupted download is never mistaken for a complete model.
+- `DownloadModelTo(variant, dir)` backs both `DownloadModel` (uses `MODELS_DIR`) and `pull --model-path`.
 - If a model directory contains a subdirectory instead of the expected file (e.g. from an older download), `ResolveModelPath` in `config/models.go` drills one level deeper automatically.
 - Model paths also support an `mmproj-*` sidecar file (not currently used by CrispASR, but kept for potential future mmproj support).
 - The `--model` flag and `/setmodel` command accept variant names (e.g. `parakeet-tdt-0.6b-v3-q8_0`), not raw file paths.

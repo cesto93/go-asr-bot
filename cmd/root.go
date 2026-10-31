@@ -53,6 +53,10 @@ var rootCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
+		if err := config.EnsureModelsDir(); err != nil {
+			slog.Warn("models directory unavailable, model downloads will fail", "err", err)
+		}
+
 		if _, err := os.Stat(modelPath); os.IsNotExist(err) {
 			slog.Info("downloading model", "path", modelPath)
 			if err := config.DownloadModel(modelName); err != nil {

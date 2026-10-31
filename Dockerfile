@@ -86,6 +86,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libopus0 \
     && rm -rf /var/lib/apt/lists/*
 
+RUN mkdir -p /opt/go-asr-bot/models
+
 COPY --from=build /go-asr-bot /usr/local/bin/go-asr-bot
 COPY --from=build \
     /src/lib/crispasr/build/ggml/src/libggml*.so* \
@@ -97,6 +99,8 @@ COPY scripts/docker-entrypoint.sh /entrypoint.sh
 RUN strip --strip-unneeded /usr/local/lib/*.so* 2>/dev/null || true
 
 ENV LD_LIBRARY_PATH=/usr/local/lib
+
+WORKDIR /opt/go-asr-bot
 
 RUN chmod +x /entrypoint.sh
 ENTRYPOINT ["/entrypoint.sh"]

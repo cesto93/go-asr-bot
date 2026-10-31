@@ -9,14 +9,22 @@ import (
 )
 
 func DownloadModel(variant string) error {
+	return DownloadModelTo(variant, ModelsDir())
+}
+
+func DownloadModelTo(variant, destDir string) error {
 	v, ok := ModelVariants[variant]
 	if !ok {
 		return fmt.Errorf("unknown model variant %q", variant)
 	}
 
-	modelDir := filepath.Join(ModelsDir(), v.ModelFile)
+	if err := os.MkdirAll(destDir, 0775); err != nil {
+		return fmt.Errorf("create models directory %s: %w", destDir, err)
+	}
+
+	modelDir := filepath.Join(destDir, v.ModelFile)
 	if err := os.MkdirAll(modelDir, 0775); err != nil {
-		return fmt.Errorf("create directory %s: %w", modelDir, err)
+		return fmt.Errorf("create model directory %s: %w", modelDir, err)
 	}
 
 	type fileSpec struct{ name, url string }
@@ -49,12 +57,22 @@ func downloadFile(url, dest string) error {
 		return fmt.Errorf("bad status: %s", resp.Status)
 	}
 
-	out, err := os.Create(dest)
+	tmp := dest + ".part"
+	out, err := os.Create(tmp)
 	if err != nil {
 		return err
 	}
-	defer out.Close()
 
-	_, err = io.Copy(out, resp.Body)
-	return err
+	if _, err := io.Copy(out, resp.Body); err != nil {
+		out.Close()
+		os.Remove(tmp)
+		return err
+	}
+
+	if err := out.Close(); err != nil {
+		os.Remove(tmp)
+		return err
+	}
+
+	return os.Rename(tmp, dest)
 }

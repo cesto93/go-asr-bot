@@ -77,6 +77,8 @@ docker compose up -d
 
 Requires a `.env` file with `TELEGRAM_BOT_TOKEN`.
 
+Config and models are kept in the named volumes `asr-data` (`/opt/go-asr-bot`) and `asr-models` (`/opt/go-asr-bot/models`). The repository is not bind-mounted into the container, so deleting or moving the project directory cannot break a running container. If you change the compose file or move the project, recreate the container with `docker compose up -d --force-recreate`.
+
 The Dockerfile rebuilds ggml from source without AVX-512 to avoid SIGILL on CPUs lacking AVX-512 support (e.g. Intel i7-1355U).
 
 ARM64 builds are supported via `TARGETARCH=arm64`:

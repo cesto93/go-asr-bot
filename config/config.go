@@ -1,6 +1,7 @@
 package config
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 
@@ -10,8 +11,6 @@ import (
 )
 
 const DataDir = "/opt/go-asr-bot"
-
-
 
 func ConfigPath() string {
 	if p := os.Getenv("CONFIG_PATH"); p != "" {
@@ -25,6 +24,14 @@ func ModelsDir() string {
 		return d
 	}
 	return DataDir + "/models"
+}
+
+func EnsureModelsDir() error {
+	dir := ModelsDir()
+	if err := os.MkdirAll(dir, 0775); err != nil {
+		return fmt.Errorf("create models directory %s: %w", dir, err)
+	}
+	return nil
 }
 
 type Config struct {

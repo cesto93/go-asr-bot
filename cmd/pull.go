@@ -9,8 +9,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-
-
 var (
 	pullUpgrade   bool
 	pullModel     string
@@ -43,12 +41,13 @@ func downloadModel(variant, destDir string, upgrade bool) error {
 		return fmt.Errorf("unknown model variant %q", variant)
 	}
 
-	modelDir := filepath.Join(destDir, v.ModelFile)
 	if upgrade {
-		os.RemoveAll(modelDir)
+		if err := os.RemoveAll(filepath.Join(destDir, v.ModelFile)); err != nil {
+			return err
+		}
 	}
 
-	return config.DownloadModel(variant)
+	return config.DownloadModelTo(variant, destDir)
 }
 
 func init() {
