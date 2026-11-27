@@ -134,14 +134,13 @@ func (b *Bot) SetModel(name string) error {
 	}
 	cfg := config.Load()
 
-	if b.engine != nil {
-		b.engine.Close()
-		b.engine = nil
-	}
-
 	engine, err := asr.NewFromConfig(cfg, modelPath, mmprojPath, v.Backend)
 	if err != nil {
 		return fmt.Errorf("create engine: %w", err)
+	}
+
+	if b.engine != nil {
+		b.engine.Close()
 	}
 
 	b.engine = engine
@@ -185,6 +184,22 @@ func (b *Bot) Run() error {
 	updates := b.api.GetUpdatesChan(u)
 
 	for update := range updates {
+		if update.CallbackQuery != nil {
+			cq := update.CallbackQuery
+			if b.authorizedUserID != 0 && cq.From.ID != b.authorizedUserID {
+				b.api.Request(tgbotapi.NewCallback(cq.ID, "Not authorized"))
+				continue
+			}
+			slog.Info("callback received",
+				"user", cq.From.UserName,
+				"data", cq.Data)
+			if err := b.handlers.HandleCallback(cq); err != nil {
+				slog.Error("error handling callback", "err", err)
+				b.api.Request(tgbotapi.NewCallback(cq.ID, "Error: "+err.Error()))
+			}
+			continue
+		}
+
 		if update.Message != nil {
 			if b.authorizedUserID != 0 && update.Message.From.ID != b.authorizedUserID {
 				continue
@@ -202,5 +217,3 @@ func (b *Bot) Run() error {
 
 	return nil
 }
-
-

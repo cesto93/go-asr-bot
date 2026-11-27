@@ -37,8 +37,9 @@ Model paths are always inferred from the selected model variant (via `--model` f
 | ------- | ----------- |
 | `/start` | Start the bot |
 | `/help` | Show available commands |
-| `/status` | Show current model, language, and downloaded models |
-| `/setmodel <name>` | Set ASR model (downloads if needed) |
+| `/status` | Show current model, language, and downloaded models (with "Change model" button) |
+| `/models` | Choose ASR model from an inline keyboard |
+| `/setmodel [name]` | Set ASR model by name (downloads if needed); no name opens the model menu |
 | `/setlang <code>` | Set language (ISO 639-1, empty to clear) |
 
 ## CLI commands
@@ -198,3 +199,10 @@ Each model variant lives in its own subdirectory named after the model `.gguf` f
 - Error handling: return errors up, log at call site
 - Handlers go in `internal/handlers/`, one file per concern if they grow
 - Bot lifecycle managed in `internal/bot/bot.go`
+
+## Telegram UI
+
+- Model selection is graphical: `/models`, `/setmodel` (no args) and the "Change model" button in `/status` all send an inline keyboard built in `internal/handlers/menu.go`.
+- Buttons use callback data prefixed with `mdl:` (`mdl:menu`, `mdl:close`, `mdl:set:<variant>`). Inline keyboards are limited to 64 bytes per callback payload, so keep the prefix short.
+- Labels mark the active model with `(active)` and models not stored locally with `(download)`; selecting one triggers the download in `Bot.SetModel`.
+- Callback queries are dispatched in `Bot.Run` (`internal/bot/bot.go`) with the same `USER_ID` authorization as messages, then handled by `Handler.HandleCallback`.

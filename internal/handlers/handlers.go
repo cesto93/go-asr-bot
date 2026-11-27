@@ -30,7 +30,8 @@ var BotCommands = []tgbotapi.BotCommand{
 	{Command: "start", Description: "Start the bot"},
 	{Command: "help", Description: "Show available commands"},
 	{Command: "status", Description: "Show current model, language, and downloaded models"},
-	{Command: "setmodel", Description: "Set ASR model (downloads if needed)"},
+	{Command: "models", Description: "Choose ASR model from a menu"},
+	{Command: "setmodel", Description: "Set ASR model by name (downloads if needed)"},
 	{Command: "setlang", Description: "Set language (ISO 639-1, empty to clear)"},
 }
 
@@ -40,11 +41,11 @@ func HelpText() string {
 	for _, cmd := range BotCommands {
 		desc := cmd.Description
 		if cmd.Command == "setmodel" {
-			desc = "<name> - Set ASR model (downloads if needed)"
+			desc = "<name> - " + desc
 		} else if cmd.Command == "setlang" {
-			desc = "<code> - Set language (ISO 639-1, empty to clear)"
+			desc = "<code> - " + desc
 		}
-		b.WriteString("/" + cmd.Command + " " + desc + "\n")
+		b.WriteString("/" + cmd.Command + " - " + desc + "\n")
 	}
 	b.WriteString("\nSend a voice message to transcribe it.")
 	return b.String()
@@ -82,6 +83,8 @@ func (h *Handler) handleCommand(msg *tgbotapi.Message) error {
 		return h.sendText(msg.Chat.ID, HelpText())
 	case "status":
 		return h.handleStatus(msg)
+	case "models":
+		return h.showModelMenu(msg.Chat.ID)
 	case "setmodel":
 		return h.handleSetModel(msg)
 	case "setlang":
@@ -111,7 +114,10 @@ func (h *Handler) handleStatus(msg *tgbotapi.Message) error {
 		}
 	}
 
-	return h.sendText(msg.Chat.ID, text)
+	reply := tgbotapi.NewMessage(msg.Chat.ID, text)
+	reply.ReplyMarkup = h.statusKeyboard()
+	_, err := h.bot.Send(reply)
+	return err
 }
 
 func downloadedModels() []string {
@@ -144,16 +150,12 @@ func downloadedModels() []string {
 func (h *Handler) handleSetModel(msg *tgbotapi.Message) error {
 	args := strings.Fields(msg.CommandArguments())
 	if len(args) == 0 {
-		names := make([]string, 0, len(config.ModelVariants))
-		for k := range config.ModelVariants {
-			names = append(names, k)
-		}
-		return h.sendText(msg.Chat.ID, "Usage: /setmodel <name>\nAvailable models: "+strings.Join(names, ", "))
+		return h.showModelMenu(msg.Chat.ID)
 	}
 
 	name := args[0]
 	if _, ok := config.ModelVariants[name]; !ok {
-		return h.sendText(msg.Chat.ID, "Unknown model. Use /setmodel without arguments to list available models.")
+		return h.sendText(msg.Chat.ID, "Unknown model. Use /models to pick one from the menu.")
 	}
 
 	if err := h.server.SetModel(name); err != nil {

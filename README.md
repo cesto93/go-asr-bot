@@ -50,8 +50,9 @@ Model paths are inferred from the variant name. `Language` and `UserID` hot-relo
 | ------- | ----------- |
 | `/start` | Start the bot |
 | `/help` | Show available commands |
-| `/status` | Show current model, language, and downloaded models |
-| `/setmodel <name>` | Set ASR model (downloads if needed) |
+| `/status` | Show current model, language, and downloaded models (with a "Change model" button) |
+| `/models` | Choose the ASR model from an inline keyboard (no typing needed) |
+| `/setmodel [name]` | Set ASR model by name (downloads if needed); without a name opens the model menu |
 | `/setlang <code>` | Set language (ISO 639-1, empty to clear) |
 
 ## Available models
