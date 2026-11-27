@@ -107,6 +107,10 @@ A single workflow (`.github/workflows/docker.yml`) builds both `linux/amd64` and
 
 Each platform runs on a native runner (`ubuntu-latest` for amd64, `ubuntu-24.04-arm` for arm64, free for public repos), so no QEMU emulation is involved. The matrix carries `platform`/`runner`/`arch` per entry; cache scopes are per arch. Do not reintroduce `docker/setup-qemu-action` unless a runner is switched back to an x86 host.
 
+### Release images
+
+`.github/workflows/release.yml` publishes versioned images when a GitHub release is published (also runnable via `workflow_dispatch` with a `tag` input). The image is tagged with the release tag minus the leading `v` (e.g. release `v1.2.3` → `ghcr.io/<owner>/<repo>:1.2.3`) plus the release commit SHA; `latest` is only moved for non-prerelease releases. Per-arch staging tags are `<arch>-<version>` and are merged into a multi-arch manifest.
+
 ### ARM64
 
 The build script supports `TARGETARCH=arm64` for ARM64 builds. Pre-built ARM64 binaries are downloaded from a separate CrispASR release URL. Build with:
